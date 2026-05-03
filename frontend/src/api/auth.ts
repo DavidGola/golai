@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/apiClient'
-import { LoginResponseSchema, UserProfileSchema, type LoginResponse, type UserProfile } from '@/types/auth'
+import { LoginResponseSchema, UserProfileSchema, UserReadSchema, type LoginResponse, type UserProfile, type UserRead } from '@/types/auth'
 
 export async function login(identifier: string, password: string): Promise<LoginResponse> {
   const body = new URLSearchParams({ username: identifier, password })
@@ -9,9 +9,9 @@ export async function login(identifier: string, password: string): Promise<Login
   return LoginResponseSchema.parse(res.data)
 }
 
-export async function register(email: string, password: string, username: string): Promise<UserProfile> {
+export async function register(email: string, password: string, username: string): Promise<UserRead> {
   const res = await apiClient.post<unknown>('/auth/register', { email, password, username })
-  return UserProfileSchema.parse(res.data)
+  return UserReadSchema.parse(res.data)
 }
 
 export async function logout(): Promise<void> {

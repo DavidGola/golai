@@ -9,6 +9,7 @@ _RAG_QUERY = text("""
     SELECT
         g.id::text,
         g.title,
+        g.release_date,
         g.summary,
         g.hltb_main,
         g.igdb_rating,
