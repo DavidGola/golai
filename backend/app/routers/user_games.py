@@ -1,0 +1,88 @@
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.deps import current_active_user
+from app.database import get_db
+from app.models.user import User
+from app.models.user_game import UserGameStatus
+from app.schemas.steam_import import SteamConfirmRequest, SteamConfirmResponse, SteamPreviewRequest, SteamPreviewResponse
+from app.schemas.user_game import UserGameCreate, UserGameRead, UserGameUpdate
+from app.services import steam_import as steam_service
+from app.services import user_games as ug_service
+
+router = APIRouter(prefix="/users/me/games", tags=["user_games"])
+
+
+@router.get("", response_model=list[UserGameRead])
+async def list_library(
+    status: UserGameStatus | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    return await ug_service.list_library(db, current_user.id, status)
+
+
+@router.post("", response_model=UserGameRead, status_code=status.HTTP_201_CREATED)
+async def add_to_library(
+    payload: UserGameCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    try:
+        return await ug_service.add_to_library(db, current_user.id, payload)
+    except ValueError as e:
+        if str(e) == "game_not_found":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Jeu introuvable")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Jeu déjà dans la bibliothèque")
+
+
+@router.patch("/{ug_id}", response_model=UserGameRead)
+async def update_entry(
+    ug_id: uuid.UUID,
+    payload: UserGameUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    entry = await ug_service.update_entry(db, current_user.id, ug_id, payload)
+    if not entry:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entrée introuvable")
+    return entry
+
+
+@router.delete("/{ug_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_entry(
+    ug_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    removed = await ug_service.remove_entry(db, current_user.id, ug_id)
+    if not removed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entrée introuvable")
+
+
+@router.post("/steam/preview", response_model=SteamPreviewResponse)
+async def steam_preview(
+    payload: SteamPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    try:
+        items = await steam_service.build_preview(db, current_user, payload.profile)
+    except ValueError as e:
+        code = str(e)
+        if code == "steam_invalid_input":
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=code)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=code)
+    return SteamPreviewResponse(items=items)
+
+
+@router.post("/steam/import", response_model=SteamConfirmResponse)
+async def steam_import(
+    payload: SteamConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    imported, skipped = await steam_service.confirm_import(db, current_user, payload.items)
+    return SteamConfirmResponse(imported=imported, skipped=skipped)

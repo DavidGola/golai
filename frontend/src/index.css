@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base:         #111111;
+  --color-elevated:     #1A1A1A;
+  --color-panel:        #222222;
+  --color-hover:        #2A2A2A;
+  --color-input-bg:     #181818;
+
+  --color-accent:       #1035C0;
+  --color-accent-soft:  #5B7EFF;
+  --color-accent-glow:  rgba(16, 53, 192, 0.3);
+  --color-accent-dim:   rgba(16, 53, 192, 0.12);
+
+  --color-content:      #EBEBEB;
+  --color-subtle:       #888888;
+  --color-ghost:        #444444;
+
+  --color-separator:    #2E2E2E;
+
+  --color-danger:       #FF3B5C;
+  --color-danger-dim:   rgba(255, 59, 92, 0.12);
+
+  --color-user-bubble:  #0D1E52;
+  --color-ai-bubble:    #1A1A1A;
+
+  /* Aliases pour les composants Tailwind */
+  --color-border:   #2E2E2E;
+  --color-primary:  #EBEBEB;
+  --color-muted:    #888888;
+  --color-faint:    #666666;
+
+  --font-display: 'Orbitron', sans-serif;
+  --font-body:    'Outfit', sans-serif;
+}
+
+@layer base {
+  html { height: 100%; }
+  body {
+    height: 100%;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 15px;
+    color: #EBEBEB;
+    background: #111111;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { height: 100%; }
+  input, textarea { font-family: inherit; }
+}
+
+/* ─── Animations ────────────────────────────────────────────── */
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes spin  { to { transform: rotate(360deg); } }
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2E2E2E; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #444444; }
+
+/* ─── Prose (react-markdown) ─────────────────────────────────── */
+.prose { color: #EBEBEB; line-height: 1.65; }
+.prose p { margin: 0 0 0.75em; }
+.prose p:last-child { margin-bottom: 0; }
+.prose code { background: #222222; border-radius: 4px; padding: 2px 6px; font-size: 13px; color: #EBEBEB; }
+.prose pre { background: #1A1A1A; border: 1px solid #2E2E2E; border-radius: 8px; padding: 12px 16px; overflow-x: auto; margin: 0.75em 0; }
+.prose pre code { background: none; padding: 0; }
+.prose a { color: #5B7EFF; }
+.prose strong { color: #EBEBEB; font-weight: 600; }
+.prose ul, .prose ol { padding-left: 1.25em; margin: 0.5em 0; }
+.prose li { margin-bottom: 0.25em; }
+.prose h1, .prose h2, .prose h3, .prose h4 { font-weight: 600; margin: 0.75em 0 0.25em; color: #EBEBEB; }

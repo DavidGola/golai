@@ -1,0 +1,24 @@
+import { z } from 'zod'
+
+export const MessageReadSchema = z.object({
+  id: z.string(),
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+  tokens_used: z.number().nullable(),
+  created_at: z.string(),
+})
+
+export const ConversationReadSchema = z.object({
+  id: z.string(),
+  title: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+})
+
+export const ConversationWithMessagesSchema = ConversationReadSchema.extend({
+  messages: z.array(MessageReadSchema),
+})
+
+export type MessageRead = z.infer<typeof MessageReadSchema>
+export type ConversationRead = z.infer<typeof ConversationReadSchema>
+export type ConversationWithMessages = z.infer<typeof ConversationWithMessagesSchema>

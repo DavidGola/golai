@@ -1,0 +1,420 @@
+{
+  "name": "golai-library-v1",
+  "description": "Scenarios d'evaluation GolAi avec profils et bibliotheques fixtures.",
+  "metadata": {
+    "version": 1,
+    "domain": "golai",
+    "fixture_type": "library"
+  },
+  "items": [
+    {
+      "id": "weekend-short-owned",
+      "input": "J'ai deux soirs devant moi ce week-end, je lance quoi dans ma bibliotheque ?",
+      "expected_output": {
+        "criteria": [
+          "Recommande un jeu possede et non termine.",
+          "Favorise un jeu court ou deja bien avance.",
+          "Justifie avec le statut, la duree ou les gouts utilisateur."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "recommendation", "weekend", "constraints"],
+        "profile": {
+          "preferred_playtime": "short",
+          "favorite_genres": ["Action", "Roguelite"],
+          "important_criteria": ["Rythme", "Accessibilite"]
+        },
+        "library": [
+          {
+            "title": "Hades",
+            "status": "completed",
+            "hours_played": 48,
+            "user_rating": 9,
+            "genres": ["Action", "Roguelite"],
+            "hltb_main": 22
+          },
+          {
+            "title": "A Short Hike",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Aventure", "Exploration"],
+            "hltb_main": 2
+          },
+          {
+            "title": "Persona 5 Royal",
+            "status": "todo",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["RPG"],
+            "hltb_main": 101
+          }
+        ]
+      }
+    },
+    {
+      "id": "coop-not-started",
+      "input": "Je cherche un jeu coop dans ce que je possede, pas trop prise de tete.",
+      "expected_output": {
+        "criteria": [
+          "Utilise la bibliotheque utilisateur.",
+          "Recommande un jeu coop possede.",
+          "Evite les jeux deja termines sauf justification claire."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "coop", "recommendation"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Cooperation", "Aventure"],
+          "important_criteria": ["Cooperation", "Accessibilite"]
+        },
+        "library": [
+          {
+            "title": "It Takes Two",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Cooperation", "Aventure"],
+            "hltb_main": 14
+          },
+          {
+            "title": "Cuphead",
+            "status": "todo",
+            "hours_played": 1,
+            "user_rating": null,
+            "genres": ["Action", "Plateforme"],
+            "hltb_main": 11
+          },
+          {
+            "title": "Portal 2",
+            "status": "completed",
+            "hours_played": 18,
+            "user_rating": 10,
+            "genres": ["Puzzle", "Cooperation"],
+            "hltb_main": 9
+          }
+        ]
+      }
+    },
+    {
+      "id": "completed-summary",
+      "input": "Quels sont les meilleurs jeux que j'ai deja termines ?",
+      "expected_output": {
+        "criteria": [
+          "Filtre sur les jeux termines.",
+          "Classe ou met en avant les mieux notes par l'utilisateur.",
+          "Ne recommande pas des jeux non termines comme s'ils etaient termines."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "completed", "ranking"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["RPG", "Action"],
+          "important_criteria": ["Histoire"]
+        },
+        "library": [
+          {
+            "title": "Disco Elysium",
+            "status": "completed",
+            "hours_played": 32,
+            "user_rating": 10,
+            "genres": ["RPG", "Narratif"],
+            "hltb_main": 23
+          },
+          {
+            "title": "Elden Ring",
+            "status": "completed",
+            "hours_played": 120,
+            "user_rating": 9,
+            "genres": ["Action", "RPG"],
+            "hltb_main": 60
+          },
+          {
+            "title": "Baldur's Gate 3",
+            "status": "todo",
+            "hours_played": 5,
+            "user_rating": null,
+            "genres": ["RPG"],
+            "hltb_main": 70
+          }
+        ]
+      }
+    },
+    {
+      "id": "do-not-overinfer-hours",
+      "input": "Vu mes heures de jeu, tu penses que j'aime surtout quel genre ?",
+      "expected_output": {
+        "criteria": [
+          "Ne deduit pas une preference de genre depuis les heures seules.",
+          "Utilise les notes utilisateur et les genres explicites.",
+          "Mentionne l'incertitude si les signaux sont limites."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "preference-analysis", "hours"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": [],
+          "important_criteria": ["Gameplay"]
+        },
+        "library": [
+          {
+            "title": "Dota 2",
+            "status": "todo",
+            "hours_played": 900,
+            "user_rating": 4,
+            "genres": ["MOBA", "Strategie"],
+            "hltb_main": null
+          },
+          {
+            "title": "Celeste",
+            "status": "completed",
+            "hours_played": 12,
+            "user_rating": 10,
+            "genres": ["Plateforme"],
+            "hltb_main": 8
+          },
+          {
+            "title": "Outer Wilds",
+            "status": "completed",
+            "hours_played": 20,
+            "user_rating": 10,
+            "genres": ["Exploration", "Puzzle"],
+            "hltb_main": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "no-good-library-match",
+      "input": "Je veux un city builder chill dans ma bibliotheque.",
+      "expected_output": {
+        "criteria": [
+          "Reconnait qu'aucun jeu possede ne correspond clairement.",
+          "Ne force pas une recommandation faible sans reserve.",
+          "Propose eventuellement l'alternative la plus proche avec prudence."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "no-match", "constraints"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Simulation", "Strategie"],
+          "important_criteria": ["Relaxation"]
+        },
+        "library": [
+          {
+            "title": "Doom Eternal",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["FPS", "Action"],
+            "hltb_main": 14
+          },
+          {
+            "title": "Sekiro",
+            "status": "todo",
+            "hours_played": 3,
+            "user_rating": null,
+            "genres": ["Action", "Souls-like"],
+            "hltb_main": 30
+          }
+        ]
+      }
+    },
+    {
+      "id": "already-owned-similar",
+      "input": "J'ai adore Hollow Knight, je lance quoi de similaire parmi mes jeux ?",
+      "expected_output": {
+        "criteria": [
+          "Tient compte du fait que Hollow Knight est deja termine/apprecie.",
+          "Cherche un jeu possede similaire plutot que recommander Hollow Knight.",
+          "Justifie par les genres ou le ressenti."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "similar", "owned-games"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Metroidvania", "Action"],
+          "important_criteria": ["Exploration", "Challenge"]
+        },
+        "library": [
+          {
+            "title": "Hollow Knight",
+            "status": "completed",
+            "hours_played": 55,
+            "user_rating": 10,
+            "genres": ["Metroidvania", "Action"],
+            "hltb_main": 27
+          },
+          {
+            "title": "Ori and the Will of the Wisps",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Metroidvania", "Plateforme"],
+            "hltb_main": 12
+          },
+          {
+            "title": "Slay the Spire",
+            "status": "todo",
+            "hours_played": 2,
+            "user_rating": null,
+            "genres": ["Deckbuilder", "Roguelite"],
+            "hltb_main": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "avoid-long-game-short-constraint",
+      "input": "Je veux finir quelque chose rapidement, lequel de mes jeux eviter et lequel choisir ?",
+      "expected_output": {
+        "criteria": [
+          "Choisit un jeu court dans la bibliotheque.",
+          "Signale explicitement le jeu long a eviter.",
+          "Respecte la contrainte de temps."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "short", "comparison"],
+        "profile": {
+          "preferred_playtime": "short",
+          "favorite_genres": ["Narratif", "Puzzle"],
+          "important_criteria": ["Duree"]
+        },
+        "library": [
+          {
+            "title": "What Remains of Edith Finch",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Narratif", "Exploration"],
+            "hltb_main": 2
+          },
+          {
+            "title": "The Witcher 3",
+            "status": "todo",
+            "hours_played": 6,
+            "user_rating": null,
+            "genres": ["RPG", "Open World"],
+            "hltb_main": 52
+          }
+        ]
+      }
+    },
+    {
+      "id": "backlog-priority",
+      "input": "Dans mon backlog, donne-moi une priorite logique pour les 3 prochains jeux.",
+      "expected_output": {
+        "criteria": [
+          "Priorise uniquement des jeux todo/not_started.",
+          "Explique l'ordre avec gouts, duree ou qualite.",
+          "Ne met pas les jeux dropped en priorite haute."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "backlog", "ranking"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["RPG", "Puzzle"],
+          "important_criteria": ["Histoire", "Gameplay"]
+        },
+        "library": [
+          {
+            "title": "Return of the Obra Dinn",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Puzzle", "Enquete"],
+            "hltb_main": 8
+          },
+          {
+            "title": "Mass Effect Legendary Edition",
+            "status": "todo",
+            "hours_played": 4,
+            "user_rating": null,
+            "genres": ["RPG", "Science-fiction"],
+            "hltb_main": 68
+          },
+          {
+            "title": "League of Legends",
+            "status": "dropped",
+            "hours_played": 200,
+            "user_rating": 3,
+            "genres": ["MOBA"],
+            "hltb_main": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "catalog-rag-general",
+      "input": "Je cherche un jeu recent avec une excellente reception joueur, tu me conseillerais quoi ?",
+      "expected_output": {
+        "criteria": [
+          "Peut chercher dans le catalogue au-dela de la bibliotheque.",
+          "Utilise les signaux de reception joueur quand disponibles.",
+          "Ne pretend pas connaitre des donnees absentes des resultats."
+        ]
+      },
+      "metadata": {
+        "tags": ["catalog", "rag", "quality-signals"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Action", "RPG"],
+          "important_criteria": ["Avis joueurs"]
+        },
+        "library": []
+      }
+    },
+    {
+      "id": "status-aware-next-game",
+      "input": "J'ai abandonne certains jeux, evite-moi ce style et propose un meilleur choix dans ma bibliotheque.",
+      "expected_output": {
+        "criteria": [
+          "Identifie les jeux dropped comme signaux negatifs.",
+          "Ne recommande pas un jeu dropped.",
+          "Propose un jeu possede plus coherent avec les notes positives."
+        ]
+      },
+      "metadata": {
+        "tags": ["library", "status", "negative-preference"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": [],
+          "important_criteria": ["Gameplay"]
+        },
+        "library": [
+          {
+            "title": "Darkest Dungeon",
+            "status": "dropped",
+            "hours_played": 7,
+            "user_rating": 3,
+            "genres": ["Roguelite", "Strategie"],
+            "hltb_main": 58
+          },
+          {
+            "title": "Into the Breach",
+            "status": "not_started",
+            "hours_played": 0,
+            "user_rating": null,
+            "genres": ["Strategie", "Tactique"],
+            "hltb_main": 6
+          },
+          {
+            "title": "Firewatch",
+            "status": "completed",
+            "hours_played": 4,
+            "user_rating": 9,
+            "genres": ["Narratif", "Exploration"],
+            "hltb_main": 4
+          }
+        ]
+      }
+    }
+  ]
+}

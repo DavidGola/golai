@@ -1,0 +1,218 @@
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '@/auth/useAuth'
+import SidebarLeft from '@/components/layout/SidebarLeft'
+import MessageBubble from '@/components/chat/MessageBubble'
+import ChatInput from '@/components/chat/ChatInput'
+import LibraryPanel from '@/components/library/LibraryPanel'
+import { useConversation, useCreateConversation } from '@/hooks/useConversations'
+import { useChatStream } from '@/hooks/useChatStream'
+import { useAnonymousChat } from '@/hooks/useAnonymousChat'
+import { useChatConfig } from '@/hooks/useChatConfig'
+import { featureFlags } from '@/lib/featureFlags'
+import type { MessageRead } from '@/types/conversation'
+
+const EMPTY_MESSAGES: MessageRead[] = []
+
+export default function ChatPage() {
+  const { user } = useAuth()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [libraryOpen, setLibraryOpen] = useState(() => {
+    const saved = localStorage.getItem('golai_library_open')
+    return saved === null ? true : saved === 'true'
+  })
+  useEffect(() => {
+    localStorage.setItem('golai_library_open', String(libraryOpen))
+  }, [libraryOpen])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const pendingRef = useRef<string | null>(null)
+
+  const create = useCreateConversation()
+  const { data: conv, isLoading } = useConversation(user ? id : undefined)
+  const { data: chatConfig } = useChatConfig()
+
+  // Hooks toujours appelés (Rules of Hooks) — on choisit lequel utiliser après
+  const authChat = useChatStream(id ?? '', conv?.messages ?? EMPTY_MESSAGES)
+  const anonChat = useAnonymousChat()
+  const authSend = authChat.send
+
+  const showAnonymousChat = !user && featureFlags.anonymousChatEnabled
+  const { messages, send: activeSend, isStreaming } = user ? authChat : anonChat
+
+  useEffect(() => {
+    if (id && pendingRef.current) {
+      const msg = pendingRef.current
+      pendingRef.current = null
+      authSend(msg)
+    }
+  }, [id, authSend])
+
+  async function handleSend(content: string) {
+    if (id) {
+      authSend(content)
+      return
+    }
+    pendingRef.current = content
+    const newConv = await create.mutateAsync(undefined)
+    navigate(`/chat/${newConv.id}`, { replace: true })
+  }
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const title = conv?.title ?? 'Nouvelle conversation'
+
+  return (
+    <div style={{ display: 'flex', height: '100%' }}>
+      {/* Sidebar — uniquement si connecté */}
+      {user && <SidebarLeft />}
+
+      {/* Chat central */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#111111' }}>
+
+        {/* Header */}
+        <div style={{
+          height: 56, flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 20px', borderBottom: '1px solid #2E2E2E', background: '#111111',
+        }}>
+          {/* Logo quand pas connecté */}
+          {!user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 6, background: '#1035C0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Orbitron', sans-serif", fontSize: 11, fontWeight: 700, color: '#fff',
+                boxShadow: '0 0 12px rgba(16,53,192,0.3)',
+              }}>G</div>
+              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: '1.5px', color: '#EBEBEB' }}>
+                GOLAI
+              </span>
+            </div>
+          )}
+
+          {/* Titre conv quand connecté */}
+          {user && (
+            <span style={{ fontSize: 14, fontWeight: 500, color: '#EBEBEB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {title}
+            </span>
+          )}
+
+          {/* Actions header */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {user && (
+              <button
+                onClick={() => setLibraryOpen(v => !v)}
+                title="Bibliothèque"
+                style={{
+                  width: 34, height: 34, borderRadius: 6,
+                  border: libraryOpen ? '1px solid rgba(16,53,192,0.3)' : '1px solid transparent',
+                  background: libraryOpen ? 'rgba(16,53,192,0.12)' : 'transparent',
+                  color: libraryOpen ? '#5B7EFF' : '#888888',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
+                } as React.CSSProperties}
+              >▤</button>
+            )}
+            {!user && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Link to="/login" style={{
+                  padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  color: '#888888', border: '1px solid #2E2E2E', transition: 'all 0.15s',
+                }}>
+                  Se connecter
+                </Link>
+                <Link to="/register" style={{
+                  padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  color: '#fff', background: '#1035C0', boxShadow: '0 0 12px rgba(16,53,192,0.3)',
+                  transition: 'all 0.15s',
+                }}>
+                  Créer un compte
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Zone messages */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
+          {/* État vide */}
+          {messages.length === 0 && !isLoading && (
+            <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '0 24px' }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 14, background: '#1035C0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Orbitron', sans-serif", fontSize: 22, fontWeight: 700, color: '#fff',
+                boxShadow: '0 0 24px rgba(16,53,192,0.4)',
+              }}>G</div>
+              <p style={{ fontSize: 16, fontWeight: 500, color: '#EBEBEB' }}>Comment puis-je t'aider ?</p>
+              <p style={{ fontSize: 13, color: '#888888' }}>Pose-moi une question sur le jeu vidéo.</p>
+              {!user && (
+                <p style={{ fontSize: 12, color: '#444444', marginTop: 8 }}>
+                  <Link to="/login" style={{ color: '#5B7EFF' }}>Connecte-toi</Link> pour sauvegarder tes conversations.
+                </p>
+              )}
+            </div>
+          )}
+
+          {id && isLoading && (
+            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#888888', fontSize: 14 }}>
+              Chargement…
+            </div>
+          )}
+
+          {messages.map(msg => (
+            <MessageBubble key={msg.id} message={msg} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        {user ? (
+          <ChatInput
+            onSend={handleSend}
+            disabled={isStreaming || create.isPending}
+            model={chatConfig?.model}
+          />
+        ) : showAnonymousChat ? (
+          <ChatInput
+            onSend={activeSend}
+            disabled={isStreaming}
+            model={chatConfig?.model}
+          />
+        ) : (
+          <AnonInput />
+        )}
+      </main>
+
+      {/* Panneau bibliothèque */}
+      {user && libraryOpen && <LibraryPanel onClose={() => setLibraryOpen(false)} />}
+    </div>
+  )
+}
+
+function AnonInput() {
+  return (
+    <div style={{
+      flexShrink: 0, borderTop: '1px solid #2E2E2E', background: '#111111',
+      padding: '12px 20px 16px',
+    }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{
+          border: '1px solid #2E2E2E', borderRadius: 16, padding: '14px 18px',
+          color: '#444444', fontSize: 14, background: '#181818', marginBottom: 10,
+        }}>
+          Parle de jeu vidéo…
+        </div>
+        <p style={{ fontSize: 13, color: '#888888' }}>
+          <Link to="/login" style={{ color: '#5B7EFF', fontWeight: 500 }}>Connecte-toi</Link>
+          {' '}ou{' '}
+          <Link to="/register" style={{ color: '#5B7EFF', fontWeight: 500 }}>crée un compte</Link>
+          {' '}pour discuter avec GolAi.
+        </p>
+      </div>
+    </div>
+  )
+}

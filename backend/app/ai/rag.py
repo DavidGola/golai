@@ -1,0 +1,51 @@
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.ai.embeddings import embed_query
+from app.config import settings
+from app.observability import captured_input, observe, safe_update
+
+_RAG_QUERY = text("""
+    SELECT
+        g.id::text,
+        g.title,
+        g.summary,
+        g.hltb_main,
+        g.igdb_rating,
+        g.metacritic_score,
+        g.opencritic_score,
+        g.steam_score,
+        g.steam_total_reviews,
+        g.steam_reviews_summary,
+        COALESCE(
+            (SELECT string_agg(gr.name, ', ')
+             FROM games_genres gg JOIN genres gr ON gr.id = gg.genre_id
+             WHERE gg.game_id = g.id),
+            ''
+        ) AS genres
+    FROM games g
+    JOIN game_embeddings e ON e.game_id = g.id
+    WHERE e.is_active = true AND e.model_version = :model_version
+    ORDER BY e.embedding <=> CAST(:vec AS vector)
+    LIMIT :top_k
+""")
+
+
+async def retrieve_games(db: AsyncSession, query: str, top_k: int | None = None) -> list[dict]:
+    k = top_k or settings.rag_top_k
+    metadata = {"top_k": k, "embedding_model": settings.embedding_model}
+
+    with observe("rag.retrieve_games", input=captured_input(query), metadata=metadata) as observation:
+        vector = await embed_query(query)
+        vec_str = "[" + ",".join(str(x) for x in vector) + "]"
+        rows = await db.execute(
+            _RAG_QUERY,
+            {"vec": vec_str, "top_k": k, "model_version": settings.embedding_model},
+        )
+        results = [dict(row._mapping) for row in rows]
+        output = [
+            {"id": row.get("id"), "title": row.get("title")}
+            for row in results
+        ] if settings.langfuse_capture_content else {"result_count": len(results)}
+        safe_update(observation, output=output, metadata={**metadata, "result_count": len(results)})
+        return results

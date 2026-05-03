@@ -1,0 +1,53 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: golai
+      POSTGRES_USER: golai
+      POSTGRES_PASSWORD: golai
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file: .env
+    environment:
+      # Surcharge DATABASE_URL pour utiliser le hostname Docker interne (pas localhost)
+      - DATABASE_URL=postgresql+asyncpg://golai:golai@db:5432/golai
+    volumes:
+      - ./backend:/app
+      - hf_cache:/root/.cache/huggingface  # cache modèle HF persistant
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_ALLOW_ANONYMOUS_CHAT=true
+      - VITE_SENTRY_ENABLED=false
+      - VITE_SENTRY_DSN=
+      - VITE_SENTRY_ENVIRONMENT=development
+      - VITE_SENTRY_RELEASE=
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # node_modules du container, pas du host
+
+volumes:
+  pgdata:
+  hf_cache:
