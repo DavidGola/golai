@@ -1,11 +1,13 @@
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 _ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 
 
 class Settings(BaseSettings):
+    environment: str = "development"
     database_url: str
     anthropic_api_key: str
     igdb_client_id: str
@@ -24,6 +26,7 @@ class Settings(BaseSettings):
     litellm_model: str = "anthropic/claude-sonnet-4-5"
     chat_history_window: int = 20
     rag_top_k: int = 12
+    backend_cors_origins: str = "http://localhost:5173"
     allow_anonymous_chat: bool = True
     chat_rate_limit_enabled: bool = True
     chat_auth_rate_limit_per_hour: int = 60
@@ -41,6 +44,20 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = str(_ENV_FILE)
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.backend_cors_origins.split(",") if origin.strip()]
+
+    @model_validator(mode="after")
+    def validate_production_settings(self):
+        if self.environment != "production":
+            return self
+
+        if self.secret_key == "change-me-in-production" or len(self.secret_key) < 32:
+            raise ValueError("SECRET_KEY must be changed and contain at least 32 characters in production")
+
+        return self
 
 
 settings = Settings()

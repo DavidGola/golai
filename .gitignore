@@ -14,6 +14,7 @@ TODO.md
 .env
 .env.*
 .env.example
+!.env.production.example
 frontend/.env.example
 
 # Python
@@ -33,4 +34,3 @@ frontend/dist/
 
 # Scripts
 scripts/
-

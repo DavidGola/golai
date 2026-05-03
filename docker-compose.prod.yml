@@ -1,0 +1,73 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-golai}
+      POSTGRES_USER: ${POSTGRES_USER:-golai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.prod
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-golai}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-golai}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_ALLOW_ANONYMOUS_CHAT: ${VITE_ALLOW_ANONYMOUS_CHAT:-false}
+        VITE_SENTRY_ENABLED: ${VITE_SENTRY_ENABLED:-false}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-production}
+        VITE_SENTRY_RELEASE: ${VITE_SENTRY_RELEASE:-}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - api
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  hf_cache:
+  caddy_data:
+  caddy_config:
