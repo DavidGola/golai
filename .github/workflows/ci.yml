@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: golai_test
+          POSTGRES_USER: golai
+          POSTGRES_PASSWORD: golai
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U golai -d golai_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://golai:golai@localhost:5433/golai_test
+          SECRET_KEY: test-secret-key
+          ANTHROPIC_API_KEY: test
+          IGDB_CLIENT_ID: test
+          IGDB_CLIENT_SECRET: test
+          RAWG_API_KEY: test
+          OPENCRITIC_API_KEY: test
+          STEAM_API_KEY: test
+          GEMINI_API_KEY: test
+          OPENROUTER_API_KEY: test
+          GLM_API_KEY: test
+          LANGFUSE_ENABLED: "false"
+          SENTRY_ENABLED: "false"
+        run: python -m pytest
+
+  frontend:
+    name: Frontend build and lint
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint

@@ -5,7 +5,7 @@ import pytest_asyncio
 import httpx
 from fastapi_users.password import PasswordHelper
 from httpx import ASGITransport
-from sqlalchemy import event as sa_event
+from sqlalchemy import event as sa_event, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 import app.models  # noqa: F401 — registers all models in Base.metadata
@@ -26,6 +26,7 @@ _password_helper = PasswordHelper()
 async def test_engine():
     engine = create_async_engine(TEST_DB_URL)
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     async with engine.begin() as conn:

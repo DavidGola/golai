@@ -26,6 +26,7 @@ export default defineConfig([
     rules: {
       ...tseslint.configs.recommended.rules,
       ...reactHooks.configs.flat.recommended.rules,
+      'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     },
