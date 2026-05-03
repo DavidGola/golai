@@ -14,8 +14,8 @@ TODO.md
 .env
 .env.*
 .env.example
-!.env.production.example
 frontend/.env.example
+.env.production.example
 
 # Python
 __pycache__/
@@ -34,3 +34,6 @@ frontend/dist/
 
 # Scripts
 scripts/
+
+# Nginx
+nginx.golai.example.conf
