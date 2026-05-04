@@ -53,9 +53,15 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
           </div>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.content}
-            </ReactMarkdown>
+            {message.content === '' && message.isStreaming ? (
+              <span style={{ color: '#555555', fontStyle: 'italic', fontSize: 13 }}>
+                Génération en cours…
+              </span>
+            ) : (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            )}
             {message.isStreaming && (
               <span
                 style={{

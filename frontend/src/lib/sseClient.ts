@@ -94,6 +94,7 @@ export async function* streamMessage(
 export async function* streamAnonymousMessage(
   content: string,
   history: { role: 'user' | 'assistant'; content: string }[],
+  signal?: AbortSignal,
 ): AsyncGenerator<AnonymousSseEvent> {
   const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
@@ -101,6 +102,7 @@ export async function* streamAnonymousMessage(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content, history }),
+    signal,
   })
 
   if (!response.ok) {

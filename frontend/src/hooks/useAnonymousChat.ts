@@ -26,9 +26,10 @@ export function useAnonymousChat() {
 
     const ac = new AbortController()
     abortRef.current = ac
+    const timeoutId = setTimeout(() => ac.abort(), 60_000)
 
     try {
-      for await (const event of streamAnonymousMessage(content, currentHistory)) {
+      for await (const event of streamAnonymousMessage(content, currentHistory, ac.signal)) {
         if (ac.signal.aborted) break
 
         if (event.type === 'token') {
@@ -51,13 +52,15 @@ export function useAnonymousChat() {
           )
         }
       }
-    } catch {
+    } catch (err) {
+      const msg = ac.signal.aborted ? 'La réponse a pris trop de temps.' : 'Une erreur est survenue.'
       setMessages(prev =>
         prev.map(m =>
-          m.id === assistantId ? { ...m, content: 'Une erreur est survenue.', isStreaming: false } : m,
+          m.id === assistantId ? { ...m, content: msg, isStreaming: false } : m,
         ),
       )
     } finally {
+      clearTimeout(timeoutId)
       setIsStreaming(false)
     }
   }

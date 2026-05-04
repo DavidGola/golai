@@ -1,6 +1,6 @@
-import asyncio
 import threading
 
+from anyio.to_thread import run_sync
 from sentence_transformers import SentenceTransformer
 
 from app.config import settings
@@ -19,6 +19,6 @@ def get_embedder() -> SentenceTransformer:
 
 
 async def embed_query(text: str) -> list[float]:
-    model = await asyncio.to_thread(get_embedder)
-    vector = await asyncio.to_thread(model.encode, text, normalize_embeddings=True)
+    model = await run_sync(get_embedder)
+    vector = await run_sync(lambda: model.encode(text, normalize_embeddings=True))
     return vector.tolist()
