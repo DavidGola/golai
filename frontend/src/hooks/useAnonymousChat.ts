@@ -52,7 +52,7 @@ export function useAnonymousChat() {
           )
         }
       }
-    } catch (err) {
+    } catch {
       const msg = ac.signal.aborted ? 'La réponse a pris trop de temps.' : 'Une erreur est survenue.'
       setMessages(prev =>
         prev.map(m =>

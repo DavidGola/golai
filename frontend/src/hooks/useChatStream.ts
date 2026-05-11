@@ -38,11 +38,8 @@ function sseToUIProposal(data: ProposalSseData): UIProposal {
   }
 }
 
-export function useChatStream(conversationId: string, initialMessages: MessageRead[]) {
-  // debugEvents survit au reset post-streaming (frontend-only, absent du serveur)
-  const debugEventsRef = useRef<Map<string, DebugEvent[]>>(new Map())
-
-  const toUIMessage = (m: MessageRead): UIMessage => ({
+function toUIMessage(m: MessageRead, debugEvents?: Map<string, DebugEvent[]>): UIMessage {
+  return {
     id: m.id,
     role: m.role as 'user' | 'assistant',
     content: m.content,
@@ -54,11 +51,16 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
           state: p.state,
         }))
       : undefined,
-    debugEvents: debugEventsRef.current.get(m.id),
-  })
+    debugEvents: debugEvents?.get(m.id),
+  }
+}
+
+export function useChatStream(conversationId: string, initialMessages: MessageRead[]) {
+  // debugEvents survit au reset post-streaming (frontend-only, absent du serveur)
+  const debugEventsRef = useRef<Map<string, DebugEvent[]>>(new Map())
 
   const [messages, setMessages] = useState<UIMessage[]>(() =>
-    initialMessages.map(toUIMessage),
+    initialMessages.map(m => toUIMessage(m)),
   )
   const [isStreaming, setIsStreaming] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -66,7 +68,7 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
 
   useEffect(() => {
     if (isStreaming) return
-    setMessages(initialMessages.map(toUIMessage))
+    setMessages(initialMessages.map(m => toUIMessage(m, debugEventsRef.current)))
   }, [conversationId, initialMessages, isStreaming])
 
   async function send(content: string) {
