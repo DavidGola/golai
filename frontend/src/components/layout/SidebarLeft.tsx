@@ -48,7 +48,7 @@ export default function SidebarLeft() {
     <aside className="flex w-[300px] flex-shrink-0 flex-col border-r border-border bg-elevated">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-[18px]">
+      <div className="flex items-center gap-3 px-5 py-4">
         <div
           className="flex h-[28px] w-[28px] flex-shrink-0 items-center justify-center rounded-[7px] bg-accent font-display text-[11px] font-bold text-white"
           style={{ boxShadow: '0 0 14px rgba(16,53,192,0.4)' }}

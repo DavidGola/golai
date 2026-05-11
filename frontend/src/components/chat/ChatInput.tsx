@@ -50,7 +50,7 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
           rows={1}
           disabled={disabled}
           style={{
-            width: '100%', resize: 'none',
+            display: 'block', width: '100%', resize: 'none',
             borderRadius: 16,
             border: '1px solid #2E2E2E',
             background: '#181818',
@@ -77,21 +77,22 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
           onClick={handleSend}
           disabled={disabled || !value.trim()}
           style={{
-            position: 'absolute', bottom: 10, right: 10,
-            width: 34, height: 34,
+            position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: 12,
+            width: 32, height: 32,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 6,
+            borderRadius: '50%',
             background: '#1035C0',
             color: '#fff',
             border: 'none', cursor: 'pointer',
-            fontSize: 16,
-            boxShadow: '0 0 12px rgba(16,53,192,0.3)',
+            boxShadow: '0 0 12px rgba(16,53,192,0.35)',
             transition: 'all 0.15s',
-            opacity: (disabled || !value.trim()) ? 0.4 : 1,
+            opacity: (disabled || !value.trim()) ? 0.35 : 1,
           }}
           aria-label="Envoyer"
         >
-          ↑
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 13V3M3 8l5-5 5 5"/>
+          </svg>
         </button>
       </div>
       <div style={{

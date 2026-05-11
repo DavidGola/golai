@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from dataclasses import dataclass
 
 from pydantic_ai import Agent, RunContext
@@ -60,7 +61,24 @@ Formatage de tes réponses (markdown rendu dans l'interface) :
 - N'utilise pas de titres markdown (#, ##) — les listes et le gras suffisent.
 - Aucun emoji, jamais.
 - Pas de tableaux markdown.
-- Ne crée pas de catégories thématiques inventées. Si tu groupes des jeux, utilise uniquement les genres qui apparaissent dans les résultats search_games. Si les genres ne permettent pas un regroupement naturel, présente une liste plate."""
+- Ne crée pas de catégories thématiques inventées. Si tu groupes des jeux, utilise uniquement les genres qui apparaissent dans les résultats search_games. Si les genres ne permettent pas un regroupement naturel, présente une liste plate.
+
+Outils de modification de la bibliothèque (propose_*) :
+- Ces outils créent une carte de confirmation dans l'interface — ils ne modifient PAS la base de données.
+- Ton texte doit utiliser le conditionnel : "je peux ajouter…", "je te propose de…". Ne dis JAMAIS "j'ai ajouté", "c'est fait", "maintenant tu as…" — la mutation n'a lieu qu'après confirmation de l'utilisateur.
+- Pour propose_add_to_library, tu dois d'abord obtenir un game_id canonique via search_games ou search_games_multi dans le tour ACTUEL. Ne JAMAIS inventer un game_id.
+- Les résultats des outils (search_games, etc.) des tours précédents ne sont PAS dans ton contexte actuel. Si l'utilisateur confirme un choix présenté dans un échange précédent, tu dois TOUJOURS relancer search_games avec le titre exact avant d'appeler propose_add_to_library — même si tu te "souviens" d'un ID, il serait incorrect.
+- Si search_games ne retourne aucun résultat correspondant au titre demandé par l'utilisateur, ne conclus PAS immédiatement que le jeu n'existe pas dans le catalogue. Les jeux déjà possédés sont exclus des résultats de search_games. Appelle get_my_library pour vérifier si le jeu s'y trouve déjà avant de répondre.
+- Quand search_games retourne plusieurs jeux dont les titres appartiennent à la même franchise ou se ressemblent (ex : "Overwatch" et "Overwatch 2", "Dark Souls" / "Dark Souls II" / "Dark Souls III", "Resident Evil 4" / "Resident Evil 4 Remake"), tu DOIS présenter les options à l'utilisateur sous forme de liste à puces et attendre sa réponse explicite avant d'appeler propose_add_to_library. N'invente jamais d'intention de l'utilisateur sur la version ; demande.
+- Si l'utilisateur précise dans le même message qu'il veut ajouter ET noter ET/OU laisser un avis (ex : "ajoute X en terminé, note 9/10, j'ai trouvé ça génial"), passe directement les paramètres rating et review à propose_add_to_library — n'appelle PAS propose_set_rating après. Une seule carte de confirmation doit suffire.
+- propose_set_rating est réservé aux jeux DÉJÀ présents dans la bibliothèque (modification d'une note existante).
+- Si propose_add_to_library retourne une erreur "already_in_library", reformule poliment ("Tu as déjà ce jeu en statut X") et propose éventuellement propose_change_status à la place.
+- Si propose_change_status retourne une erreur "not_in_library", dis à l'utilisateur que le jeu n'est pas dans sa bibliothèque.
+- INTERDICTION : n'utilise JAMAIS propose_add_to_library pour un jeu déjà dans la bibliothèque (y compris un jeu que tu as ajouté plus tôt dans la même conversation). Pour noter, changer le statut ou écrire un avis sur un jeu déjà présent, utilise propose_set_rating ou propose_change_status.
+- propose_set_rating, propose_change_status et propose_remove_from_library acceptent SOIT user_game_id SOIT game_id. Tu DOIS en fournir un des deux.
+- Dans l'historique tu reverras tes propres appels propose_* et leur retour, avec un champ "state" valant "pending", "confirmed" ou "cancelled". Si tu vois un retour confirmé pour add_to_library, le user_game_id pour ce jeu y figure (champ result_user_game_id ou user_game_id).
+- Si tu n'as ni user_game_id ni game_id pour un jeu déjà dans la bibliothèque, appelle get_my_library AVANT tout propose_*.
+- Ne mentionne JAMAIS un UUID, un id, un game_id ni un user_game_id à l'utilisateur dans ta réponse. Ces identifiants sont strictement internes au système."""
 
 
 def _build_model() -> tuple[Model, ModelSettings | None]:
@@ -194,25 +212,17 @@ async def build_system_prompt(ctx: RunContext[AgentDeps]) -> str:
     return SYSTEM_PROMPT + profile
 
 
-async def _get_owned_game_ids(db: AsyncSession, user_id) -> set[str]:
-    rows = await db.execute(select(UserGame.game_id).where(UserGame.user_id == user_id))
-    return {str(gid) for gid in rows.scalars()}
-
-
 @agent.tool
 async def search_games(ctx: RunContext[AgentDeps], query: str, top_k: int = 8) -> list[dict]:
-    """Recherche des jeux pertinents par similarité sémantique. Exclut automatiquement les jeux déjà dans la bibliothèque de l'utilisateur."""
-    owned = await _get_owned_game_ids(ctx.deps.db, ctx.deps.user.id)
-    results = await retrieve_games(ctx.deps.db, query, top_k)
-    return [g for g in results if g.get("id") not in owned]
+    """Recherche des jeux pertinents par similarité sémantique."""
+    return await retrieve_games(ctx.deps.db, query, top_k)
 
 
 @agent.tool
 async def search_games_multi(ctx: RunContext[AgentDeps], queries: list[str], top_k: int = 8) -> list[dict]:
-    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats. Exclut les jeux déjà dans la bibliothèque."""
-    owned = await _get_owned_game_ids(ctx.deps.db, ctx.deps.user.id)
+    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats."""
     batches: list[list[dict]] = list(await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k) for q in queries]))
-    seen_ids: set[str] = set(owned)
+    seen_ids: set[str] = set()
     merged: list[dict] = []
     for batch in batches:
         for game in batch:
@@ -263,6 +273,7 @@ async def get_my_library(
 
     return [
         {
+            "user_game_id": str(ug.id),
             "title": game.title,
             "genres": [g.name for g in game.genres],
             "hours_played": ug.hours_played,
@@ -271,6 +282,233 @@ async def get_my_library(
         }
         for ug, game in rows
     ]
+
+
+@agent.tool
+async def propose_add_to_library(
+    ctx: RunContext[AgentDeps],
+    game_id: str,
+    status: str | None = None,
+    rating: int | None = None,
+    review: str | None = None,
+) -> dict:
+    """Propose d'ajouter un jeu à la bibliothèque, avec une note et/ou un avis optionnels.
+    Ne modifie PAS la DB — crée une carte de confirmation.
+    game_id : provient d'un résultat search_games. status : "todo", "not_started", "completed", "dropped".
+    rating : entier 1-10 (optionnel). review : texte libre (optionnel).
+    Retourne une erreur si le jeu est déjà dans la bibliothèque."""
+    try:
+        gid = uuid.UUID(game_id)
+    except ValueError:
+        return {"error": "invalid_game_id"}
+
+    game = await ctx.deps.db.get(Game, gid)
+    if not game:
+        return {"error": "game_not_found"}
+
+    existing = await ctx.deps.db.execute(
+        select(UserGame).where(UserGame.user_id == ctx.deps.user.id, UserGame.game_id == gid)
+    )
+    ug = existing.scalar_one_or_none()
+    if ug:
+        return {
+            "error": "already_in_library",
+            "user_game_id": str(ug.id),
+            "current_status": ug.status.value if ug.status else None,
+            "current_rating": ug.user_rating,
+        }
+
+    try:
+        validated_status = UserGameStatus(status) if status else None
+    except ValueError:
+        validated_status = None
+
+    if rating is not None and not (1 <= rating <= 10):
+        return {"error": "invalid_rating", "message": "La note doit être entre 1 et 10."}
+
+    proposal_id = str(uuid.uuid4())
+    return {
+        "proposal_id": proposal_id,
+        "action_type": "add_to_library",
+        "game_id": game_id,
+        "status": validated_status.value if validated_status else None,
+        "rating": rating,
+        "review": review,
+        "title": game.title,
+        "cover_url": game.cover_url,
+        "current": None,
+        "target": {
+            "status": validated_status.value if validated_status else None,
+            "rating": rating,
+            "review": review,
+        },
+    }
+
+
+@agent.tool
+async def propose_change_status(
+    ctx: RunContext[AgentDeps],
+    new_status: str,
+    user_game_id: str | None = None,
+    game_id: str | None = None,
+) -> dict:
+    """Propose de changer le statut d'un jeu de la bibliothèque. Ne modifie PAS la DB.
+    Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
+    user_game_id : l'id du UserGame (obtenu via get_my_library).
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
+    new_status : "todo", "not_started", "completed", "dropped"."""
+    try:
+        target_status = UserGameStatus(new_status)
+    except ValueError:
+        return {"error": "invalid_status", "valid_values": [s.value for s in UserGameStatus]}
+
+    ug = None
+    if user_game_id:
+        try:
+            ugid = uuid.UUID(user_game_id)
+        except ValueError:
+            return {"error": "invalid_user_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    elif game_id:
+        try:
+            gid = uuid.UUID(game_id)
+        except ValueError:
+            return {"error": "invalid_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    else:
+        return {"error": "must_provide_user_game_id_or_game_id"}
+
+    if not ug:
+        return {"error": "not_in_library"}
+
+    proposal_id = str(uuid.uuid4())
+    return {
+        "proposal_id": proposal_id,
+        "action_type": "change_status",
+        "user_game_id": str(ug.id),
+        "new_status": target_status.value,
+        "game_id": str(ug.game_id),
+        "title": ug.game.title,
+        "cover_url": ug.game.cover_url,
+        "current": {"status": ug.status.value if ug.status else None},
+        "target": {"status": target_status.value},
+    }
+
+
+@agent.tool
+async def propose_set_rating(
+    ctx: RunContext[AgentDeps],
+    user_game_id: str | None = None,
+    game_id: str | None = None,
+    rating: int | None = None,
+    review: str | None = None,
+) -> dict:
+    """Propose de noter un jeu et/ou d'écrire une review. Ne modifie PAS la DB.
+    Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
+    user_game_id : l'id du UserGame (obtenu via get_my_library).
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
+    rating : entier 1-10. review : texte libre."""
+    if rating is not None and not (1 <= rating <= 10):
+        return {"error": "invalid_rating", "message": "La note doit être entre 1 et 10."}
+
+    ug = None
+    if user_game_id:
+        try:
+            ugid = uuid.UUID(user_game_id)
+        except ValueError:
+            return {"error": "invalid_user_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    elif game_id:
+        try:
+            gid = uuid.UUID(game_id)
+        except ValueError:
+            return {"error": "invalid_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    else:
+        return {"error": "must_provide_user_game_id_or_game_id"}
+
+    if not ug:
+        return {"error": "not_in_library"}
+
+    proposal_id = str(uuid.uuid4())
+    return {
+        "proposal_id": proposal_id,
+        "action_type": "set_rating",
+        "user_game_id": str(ug.id),
+        "rating": rating,
+        "review": review,
+        "game_id": str(ug.game_id),
+        "title": ug.game.title,
+        "cover_url": ug.game.cover_url,
+        "current": {"rating": ug.user_rating, "review": ug.review},
+        "target": {"rating": rating, "review": review},
+    }
+
+
+@agent.tool
+async def propose_remove_from_library(
+    ctx: RunContext[AgentDeps],
+    user_game_id: str | None = None,
+    game_id: str | None = None,
+) -> dict:
+    """Propose de supprimer un jeu de la bibliothèque. Ne modifie PAS la DB.
+    Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
+    user_game_id : l'id du UserGame (obtenu via get_my_library).
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique)."""
+    ug = None
+    if user_game_id:
+        try:
+            ugid = uuid.UUID(user_game_id)
+        except ValueError:
+            return {"error": "invalid_user_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    elif game_id:
+        try:
+            gid = uuid.UUID(game_id)
+        except ValueError:
+            return {"error": "invalid_game_id"}
+        result = await ctx.deps.db.execute(
+            select(UserGame).options(selectinload(UserGame.game))
+            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
+        )
+        ug = result.scalar_one_or_none()
+    else:
+        return {"error": "must_provide_user_game_id_or_game_id"}
+
+    if not ug:
+        return {"error": "not_in_library"}
+
+    proposal_id = str(uuid.uuid4())
+    return {
+        "proposal_id": proposal_id,
+        "action_type": "remove_from_library",
+        "user_game_id": str(ug.id),
+        "game_id": str(ug.game_id),
+        "title": ug.game.title,
+        "cover_url": ug.game.cover_url,
+        "current": {"status": ug.status.value if ug.status else None},
+        "target": None,
+    }
 
 
 @dataclass
@@ -365,6 +603,27 @@ def history_dicts_to_messages(history: list) -> list[pai_messages.ModelMessage]:
     return result
 
 
+def _payload_to_tool_args(action: str, payload: dict) -> dict:
+    if action == "add_to_library":
+        return {
+            "game_id": payload.get("game_id"),
+            "status": payload.get("status"),
+            "rating": payload.get("rating"),
+            "review": payload.get("review"),
+        }
+    if action == "change_status":
+        return {"user_game_id": payload.get("user_game_id"), "new_status": payload.get("new_status")}
+    if action == "set_rating":
+        return {
+            "user_game_id": payload.get("user_game_id"),
+            "rating": payload.get("rating"),
+            "review": payload.get("review"),
+        }
+    if action == "remove_from_library":
+        return {"user_game_id": payload.get("user_game_id")}
+    return {}
+
+
 def db_messages_to_history(db_messages: list) -> list[pai_messages.ModelMessage]:
     """Convertit les messages DB en format pydantic-ai pour le contexte de conversation."""
     history: list[pai_messages.ModelMessage] = []
@@ -373,12 +632,40 @@ def db_messages_to_history(db_messages: list) -> list[pai_messages.ModelMessage]
             history.append(
                 pai_messages.ModelRequest(parts=[pai_messages.UserPromptPart(content=msg.content)])
             )
-        else:
-            history.append(
-                pai_messages.ModelResponse(
-                    parts=[pai_messages.TextPart(content=msg.content)],
-                    model_name=settings.litellm_model,
-                    timestamp=msg.created_at,
-                )
+            continue
+
+        response_parts: list = []
+        if msg.content:
+            response_parts.append(pai_messages.TextPart(content=msg.content))
+
+        tool_returns: list[pai_messages.ToolReturnPart] = []
+        for p in (getattr(msg, "proposals", None) or []):
+            tool_name = f"propose_{p.action_type.value}"
+            tool_call_id = f"hist_{p.id.hex[:16]}"
+            args = _payload_to_tool_args(p.action_type.value, p.payload)
+            response_parts.append(pai_messages.ToolCallPart(
+                tool_name=tool_name,
+                args=args,
+                tool_call_id=tool_call_id,
+            ))
+            tool_returns.append(pai_messages.ToolReturnPart(
+                tool_name=tool_name,
+                content={
+                    "proposal_id": str(p.id),
+                    "action_type": p.action_type.value,
+                    "state": p.state.value,
+                    **p.payload,
+                },
+                tool_call_id=tool_call_id,
+            ))
+
+        history.append(
+            pai_messages.ModelResponse(
+                parts=response_parts,
+                model_name=settings.litellm_model,
+                timestamp=msg.created_at,
             )
+        )
+        if tool_returns:
+            history.append(pai_messages.ModelRequest(parts=list(tool_returns)))
     return history

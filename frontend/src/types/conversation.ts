@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ProposalReadSchema } from '@/types/proposal'
 
 export const MessageReadSchema = z.object({
   id: z.string(),
@@ -6,6 +7,7 @@ export const MessageReadSchema = z.object({
   content: z.string(),
   tokens_used: z.number().nullable(),
   created_at: z.string(),
+  proposals: z.array(ProposalReadSchema).default([]),
 })
 
 export const ConversationReadSchema = z.object({

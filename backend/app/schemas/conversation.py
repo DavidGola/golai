@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.proposals import ProposalRead
+
 
 class MessageCreate(BaseModel):
     content: str
@@ -33,6 +35,7 @@ class MessageRead(BaseModel):
     cache_read_tokens: int | None = None
     cache_write_tokens: int | None = None
     created_at: datetime
+    proposals: list[ProposalRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 

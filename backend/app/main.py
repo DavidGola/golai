@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.observability import flush_langfuse, initialize_sentry
-from app.routers import auth, chat_config, games, users, user_games, conversations
+from app.routers import auth, chat_config, games, users, user_games, conversations, proposals
 
 os.environ.setdefault("ANTHROPIC_API_KEY", settings.anthropic_api_key)
 
@@ -26,6 +26,7 @@ app.include_router(users.router, tags=["users"])
 app.include_router(user_games.router, tags=["user_games"])
 app.include_router(conversations.router, tags=["conversations"])
 app.include_router(chat_config.router)
+app.include_router(proposals.router)
 app.include_router(games.router)
 
 if settings.allow_anonymous_chat:

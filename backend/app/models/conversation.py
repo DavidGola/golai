@@ -8,7 +8,12 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
+from typing import TYPE_CHECKING
+
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.message_proposal import MessageProposal
 
 
 class MessageRole(str, enum.Enum):
@@ -52,3 +57,6 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")
+    proposals: Mapped[list["MessageProposal"]] = relationship(
+        back_populates="message", cascade="all, delete-orphan"
+    )

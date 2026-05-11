@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import AsyncIterator
 
 from sqlalchemy import select
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 from app.ai.agent import AgentDeps
 from app.ai.stream import stream_agent
 from app.models.conversation import Conversation, Message, MessageRole
+from app.models.message_proposal import MessageProposal, ProposalActionType, ProposalState
 from app.models.user import User
 from app.config import settings
 from app.observability import captured_input, observe, safe_update
@@ -35,6 +37,7 @@ async def stream_reply(
 
     history_result = await db.execute(
         select(Message)
+        .options(selectinload(Message.proposals))
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at.desc())
         .limit(settings.chat_history_window + 1)
@@ -53,6 +56,7 @@ async def stream_reply(
 
     final_output = ""
     usage_info = None
+    pending_proposals: list[dict] = []
 
     metadata = {
         "conversation_id": str(conversation.id),
@@ -73,6 +77,13 @@ async def stream_reply(
                 yield f"event: token\ndata: {json.dumps({'text': event['data']})}\n\n"
             elif event["event"] == "tool":
                 yield f"event: tool\ndata: {json.dumps({'name': event['data']})}\n\n"
+            elif event["event"] == "tool_call":
+                yield f"event: tool_call\ndata: {json.dumps(event['data'])}\n\n"
+            elif event["event"] == "tool_result":
+                yield f"event: tool_result\ndata: {json.dumps(event['data'])}\n\n"
+            elif event["event"] == "proposal":
+                pending_proposals.append(event["data"])
+                yield f"event: proposal\ndata: {json.dumps(event['data'])}\n\n"
             elif event["event"] == "result":
                 final_output = event["data"]["output"]
                 usage_info = event["data"]["usage"]
@@ -118,6 +129,22 @@ async def stream_reply(
                 cache_read_tokens=cache_read or None,
                 cache_write_tokens=cache_write or None,
             )
+
+            for proposal_data in pending_proposals:
+                try:
+                    action_type = ProposalActionType(proposal_data["action_type"])
+                    payload = {k: v for k, v in proposal_data.items() if k not in ("proposal_id", "action_type")}
+                    db.add(MessageProposal(
+                        id=uuid.UUID(proposal_data["proposal_id"]),
+                        message_id=assistant_msg.id,
+                        action_type=action_type,
+                        payload=payload,
+                    ))
+                except Exception as exc:
+                    logger.warning("chat.proposal_persist_error", extra={"error": str(exc)})
+            if pending_proposals:
+                await db.commit()
+
             if conversation.title is None:
                 snippet = user_content.strip().splitlines()[0][:60]
                 conversation.title = snippet if len(user_content.strip()) <= 60 else snippet + "…"

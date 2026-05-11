@@ -32,7 +32,7 @@ async def get_conversation_with_messages(
 ) -> Conversation | None:
     result = await db.execute(
         select(Conversation)
-        .options(selectinload(Conversation.messages))
+        .options(selectinload(Conversation.messages).selectinload(Message.proposals))
         .where(Conversation.id == conv_id, Conversation.user_id == user_id)
     )
     conv = result.scalar_one_or_none()

@@ -1,11 +1,18 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { UIMessage } from '@/hooks/useChatStream'
+import ProposalCard from '@/components/chat/ProposalCard'
+import DebugPanel from '@/components/chat/DebugPanel'
 
 function toolLabel(toolName: string): string {
   if (toolName === 'search_games' || toolName === 'search_games_anon') {
     return 'Recherche de jeux pertinents…'
   }
+  if (toolName === 'get_my_library') return 'Lecture de ta bibliothèque…'
+  if (toolName === 'propose_add_to_library') return 'Préparation de la proposition…'
+  if (toolName === 'propose_change_status') return 'Préparation de la proposition…'
+  if (toolName === 'propose_set_rating') return 'Préparation de la proposition…'
+  if (toolName === 'propose_remove_from_library') return 'Préparation de la proposition…'
   return `Exécution de ${toolName}…`
 }
 
@@ -19,13 +26,6 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
       maxWidth: 680, width: '100%', margin: '0 auto',
       alignItems: isUser ? 'flex-end' : 'flex-start',
     }}>
-      <div style={{
-        marginBottom: 6, paddingLeft: 2, paddingRight: 2,
-        fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px',
-        color: isUser ? '#5B7EFF' : '#444444',
-      }}>
-        {isUser ? 'Toi' : 'GolAi'}
-      </div>
 
       <div style={{
         maxWidth: isUser ? '72%' : '86%',
@@ -51,18 +51,18 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
             }} />
             {toolLabel(message.currentTool)}
           </div>
+        ) : message.isStreaming && message.animatingChars == null ? (
+          <span style={{ color: '#555555', fontStyle: 'italic', fontSize: 13 }}>
+            Génération en cours…
+          </span>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
-            {message.content === '' && message.isStreaming ? (
-              <span style={{ color: '#555555', fontStyle: 'italic', fontSize: 13 }}>
-                Génération en cours…
-              </span>
-            ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content}
-              </ReactMarkdown>
-            )}
-            {message.isStreaming && (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.animatingChars != null
+                ? message.content.slice(0, message.animatingChars)
+                : message.content}
+            </ReactMarkdown>
+            {message.animatingChars != null && (
               <span
                 style={{
                   display: 'inline-block', width: 2, height: 14,
@@ -72,6 +72,10 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
                 }}
               />
             )}
+            {message.animatingChars == null && message.proposals?.map(proposal => (
+              <ProposalCard key={proposal.id} proposal={proposal} />
+            ))}
+            {message.animatingChars == null && <DebugPanel events={message.debugEvents ?? []} />}
           </div>
         )}
       </div>

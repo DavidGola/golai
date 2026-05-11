@@ -74,7 +74,7 @@ export default function ChatPage() {
 
         {/* Header */}
         <div style={{
-          height: 56, flexShrink: 0,
+          height: 60, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 20px', borderBottom: '1px solid #2E2E2E', background: '#111111',
         }}>
@@ -114,7 +114,12 @@ export default function ChatPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
                 } as React.CSSProperties}
-              >▤</button>
+              >
+                <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="13" height="13" rx="2"/>
+                  <path d="M5 6h7M5 8.5h7M5 11h4"/>
+                </svg>
+              </button>
             )}
             {!user && (
               <div style={{ display: 'flex', gap: 8 }}>
