@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 import { useConversationsList, useRenameConversation, useDeleteConversation } from '@/hooks/useConversations'
 import { formatRelativeDate } from '@/lib/formatDate'
@@ -143,6 +143,12 @@ export default function SidebarLeft() {
           </div>
           <span className="text-[14px] text-faint">⚙</span>
         </button>
+        <Link
+          to="/about"
+          className="mt-1 block w-full rounded-[6px] py-2 text-center text-[11px] text-faint transition-colors hover:bg-hover hover:text-muted"
+        >
+          À propos
+        </Link>
         <button
           onClick={logout}
           className="mt-1 w-full rounded-[6px] py-2 text-[11px] text-faint transition-colors hover:bg-hover hover:text-muted"

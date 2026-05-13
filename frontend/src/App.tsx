@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import ChatPage from '@/pages/ChatPage'
 import ProfilePage from '@/pages/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import AboutPage from '@/pages/AboutPage'
 
 export default function App() {
   const { isLoading } = useAuth()
@@ -44,6 +45,8 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/about" element={<AboutPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

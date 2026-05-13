@@ -37,3 +37,6 @@ scripts/
 
 # Nginx
 nginx.golai.example.conf
+
+# bmad
+_bmad*
