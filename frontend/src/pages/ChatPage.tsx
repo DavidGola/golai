@@ -145,21 +145,37 @@ export default function ChatPage() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 0' }}>
           {/* État vide */}
           {messages.length === 0 && !isLoading && (
-            <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '0 24px' }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 14, background: '#1035C0',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Orbitron', sans-serif", fontSize: 22, fontWeight: 700, color: '#fff',
-                boxShadow: '0 0 24px rgba(16,53,192,0.4)',
-              }}>G</div>
-              <p style={{ fontSize: 16, fontWeight: 500, color: '#EBEBEB' }}>Comment puis-je t'aider ?</p>
-              <p style={{ fontSize: 13, color: '#888888' }}>Pose-moi une question sur le jeu vidéo.</p>
-              {!user && (
-                <p style={{ fontSize: 12, color: '#444444', marginTop: 8 }}>
-                  <Link to="/login" style={{ color: '#5B7EFF' }}>Connecte-toi</Link> pour sauvegarder tes conversations.
-                </p>
-              )}
-            </div>
+            user ? (
+              <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '0 24px' }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: 14, background: '#1035C0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Orbitron', sans-serif", fontSize: 22, fontWeight: 700, color: '#fff',
+                  boxShadow: '0 0 24px rgba(16,53,192,0.4)',
+                }}>G</div>
+                <p style={{ fontSize: 16, fontWeight: 500, color: '#EBEBEB' }}>Comment puis-je t'aider ?</p>
+                <p style={{ fontSize: 13, color: '#888888' }}>Pose-moi une question sur le jeu vidéo.</p>
+              </div>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-5 px-6 text-center">
+                <div
+                  className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[14px] bg-accent font-display text-[22px] font-bold text-white"
+                  style={{ boxShadow: '0 0 24px rgba(16,53,192,0.4)' }}
+                >G</div>
+                <div className="flex flex-col gap-1">
+                  <p className="font-display text-[15px] font-semibold tracking-[2px] text-primary">GOLAI</p>
+                  <p className="text-[13px] text-muted">Recommandation de jeux vidéo</p>
+                </div>
+                <div className="max-w-[420px] space-y-1.5">
+                  <p className="text-[13px] text-primary">Décris une humeur, un jeu que tu as aimé, ou ton temps disponible.</p>
+                  <p className="text-[13px] text-muted">L'agent analyse tes goûts et te recommande ce qui colle.</p>
+                </div>
+                <p className="text-[13px] italic text-muted">Exemple : « Quel jeu jouer ce soir si j'ai aimé Hades ? »</p>
+                <Link to="/about" className="mt-2 text-[12px] text-faint transition-colors hover:text-muted">
+                  À propos de GolAi
+                </Link>
+              </div>
+            )
           )}
 
           {id && isLoading && (
