@@ -95,7 +95,7 @@ export default function RegisterPage() {
         <div style={S.logoWrap}>
           <div style={S.logoMark}>G</div>
           <div style={S.logoName}>GOLAI</div>
-          <div style={S.logoTagline}>Ton IA pour explorer le jeu vidéo</div>
+          <div style={S.logoTagline}>Recommandation de jeux vidéo</div>
         </div>
 
         <div style={S.title}>Inscription</div>

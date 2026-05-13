@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { useAuth } from '@/auth/useAuth'
 import SidebarLeft from '@/components/layout/SidebarLeft'
 
-// TODO : remplir avant déploiement
 const LINKEDIN_URL = 'https://www.linkedin.com/in/david-gola-576233181/'
 const GITHUB_URL = 'https://github.com/DavidGola'
 const REPO_URL = 'https://github.com/DavidGola/golai'
@@ -77,6 +76,11 @@ export default function AboutPage() {
         <div className="mx-auto max-w-[640px] space-y-10">
 
           {/* Header */}
+          {!user && (
+            <a href="/" className="text-[13px] text-muted transition-colors hover:text-primary">
+              ← Retour
+            </a>
+          )}
           <div className="flex items-center gap-4">
             <div
               className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[14px] bg-accent font-display text-[22px] font-bold text-white"

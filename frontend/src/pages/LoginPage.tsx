@@ -112,7 +112,7 @@ export default function LoginPage() {
         <div style={S.logoWrap}>
           <div style={S.logoMark}>G</div>
           <div style={S.logoName}>GOLAI</div>
-          <div style={S.logoTagline}>Ton IA pour explorer le jeu vidéo</div>
+          <div style={S.logoTagline}>Recommandation de jeux vidéo</div>
         </div>
 
         {showSuccess && (
