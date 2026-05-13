@@ -16,6 +16,8 @@ from app.models.message_proposal import MessageProposal, ProposalActionType, Pro
 from app.models.user import User
 from app.config import settings
 from app.observability import captured_input, observe, safe_update
+from app.schemas.conversation import ChatIntent
+from app.services.chat_intents import short_circuit_response
 from app.services.conversations import append_message
 
 
@@ -24,6 +26,7 @@ async def stream_reply(
     user: User,
     conversation: Conversation,
     user_content: str,
+    intent: ChatIntent | None = None,
 ) -> AsyncIterator[str]:
     """
     Orchestre le flux SSE complet :
@@ -34,6 +37,20 @@ async def stream_reply(
     Yield : lignes SSE formatées (data: ...\n\n)
     """
     await append_message(db, conversation.id, MessageRole.user, user_content)
+
+    canned = await short_circuit_response(db, user.id, intent)
+    if canned is not None:
+        assistant_msg = await append_message(db, conversation.id, MessageRole.assistant, canned)
+        if conversation.title is None:
+            conversation.title = user_content[:60]
+            await db.commit()
+        yield f"event: token\ndata: {json.dumps({'text': canned})}\n\n"
+        yield f"event: done\ndata: {json.dumps({'assistant_message_id': str(assistant_msg.id), 'tokens_used': 0})}\n\n"
+        logger.info("chat.intent_short_circuit", extra={
+            "intent": intent.value if intent is not None else "none", "reason": "empty_library",
+            "user_id": str(user.id), "conversation_id": str(conversation.id),
+        })
+        return
 
     history_result = await db.execute(
         select(Message)

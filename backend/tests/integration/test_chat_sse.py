@@ -141,6 +141,45 @@ async def test_sse_rate_limit_returns_429_before_persisting(
     assert msgs == []
 
 
+async def test_intent_library_recommend_empty_library_short_circuits(
+    client, auth, session_factory, monkeypatch
+):
+    """library vide + intent → réponse hardcodée, agent non appelé."""
+    agent_called = False
+
+    async def fake_stream(*args, **kwargs):
+        nonlocal agent_called
+        agent_called = True
+        yield {"event": "token", "data": "unreachable"}
+
+    monkeypatch.setattr("app.services.chat.stream_agent", fake_stream)
+
+    r_conv = await client.post("/conversations", json={"title": "CTA"}, headers=auth)
+    conv_id = r_conv.json()["id"]
+
+    r = await client.post(
+        f"/conversations/{conv_id}/messages",
+        json={"content": "Selon mes préférences, recommande-moi 5 jeux", "intent": "library_recommend"},
+        headers=auth,
+    )
+    assert r.status_code == 200
+    assert "event: token" in r.text
+    assert "event: done" in r.text
+    assert "bibliothèque est encore vide" in r.text
+    assert not agent_called
+
+    done_line = next(l for l in r.text.splitlines() if l.startswith("data:") and "assistant_message_id" in l)
+    done_data = json.loads(done_line[len("data: "):])
+    assert done_data["tokens_used"] == 0
+
+    r_conv_detail = await client.get(f"/conversations/{conv_id}", headers=auth)
+    msgs = r_conv_detail.json()["messages"]
+    assert len(msgs) == 2
+    assert msgs[1]["role"] == "assistant"
+    assert "bibliothèque est encore vide" in msgs[1]["content"]
+    assert msgs[1]["tokens_used"] == 0
+
+
 async def test_anonymous_chat_rate_limit_returns_429(client, session_factory, monkeypatch):
     monkeypatch.setattr(settings, "chat_rate_limit_enabled", True)
     monkeypatch.setattr(settings, "chat_anonymous_rate_limit_per_hour", 1)

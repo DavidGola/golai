@@ -1,4 +1,5 @@
 import { tokenStorage } from '@/lib/tokenStorage'
+import type { ChatIntent } from '@/lib/chatIntents'
 
 export type AnonymousSseEvent =
   | { type: 'token'; data: string }
@@ -38,6 +39,7 @@ export type SseEvent =
 export async function* streamMessage(
   conversationId: string,
   content: string,
+  intent?: ChatIntent,
 ): AsyncGenerator<SseEvent> {
   const token = tokenStorage.get()
   const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -50,7 +52,7 @@ export async function* streamMessage(
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, ...(intent ? { intent } : {}) }),
     },
   )
 

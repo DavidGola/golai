@@ -59,13 +59,21 @@ export default function SidebarLeft() {
       </div>
 
       {/* New conv */}
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 flex flex-col gap-2">
         <button
           onClick={() => navigate('/chat')}
           className="flex w-full items-center gap-2.5 rounded-[8px] border border-accent/30 bg-accent-dim px-4 py-3 text-[13px] font-medium text-accent-soft transition-all hover:border-accent/50 hover:bg-accent/18 hover:text-white"
         >
           <span className="text-[15px] leading-none text-accent-soft">＋</span>
           Nouvelle conversation
+        </button>
+        <button
+          onClick={() => navigate('/chat', { state: { pendingCta: 'library_recommend' } })}
+          className="flex w-full items-center gap-2.5 rounded-[8px] bg-accent px-4 py-3 text-[13px] font-medium text-white transition-all hover:opacity-90"
+          style={{ boxShadow: '0 0 12px rgba(16,53,192,0.3)' }}
+        >
+          <span className="text-[14px] leading-none">✦</span>
+          Recommande-moi 5 jeux
         </button>
       </div>
 

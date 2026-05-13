@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { LIBRARY_RECOMMEND_PROMPT } from '@/lib/chatIntents'
+import type { ChatIntent } from '@/lib/chatIntents'
 import SidebarLeft from '@/components/layout/SidebarLeft'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ChatInput from '@/components/chat/ChatInput'
@@ -18,6 +20,7 @@ export default function ChatPage() {
   const { user } = useAuth()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [libraryOpen, setLibraryOpen] = useState(() => {
     const saved = localStorage.getItem('golai_library_open')
     return saved === null ? true : saved === 'true'
@@ -26,7 +29,7 @@ export default function ChatPage() {
     localStorage.setItem('golai_library_open', String(libraryOpen))
   }, [libraryOpen])
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const pendingRef = useRef<string | null>(null)
+  const pendingRef = useRef<{ content: string; intent?: ChatIntent } | null>(null)
 
   const create = useCreateConversation()
   const { data: conv, isLoading } = useConversation(user ? id : undefined)
@@ -42,21 +45,30 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (id && pendingRef.current) {
-      const msg = pendingRef.current
+      const { content, intent } = pendingRef.current
       pendingRef.current = null
-      authSend(msg)
+      void authSend(content, intent)
     }
   }, [id, authSend])
 
-  async function handleSend(content: string) {
+  async function handleSend(content: string, intent?: ChatIntent) {
     if (id) {
-      authSend(content)
+      void authSend(content, intent)
       return
     }
-    pendingRef.current = content
+    pendingRef.current = { content, intent }
     const newConv = await create.mutateAsync(undefined)
     navigate(`/chat/${newConv.id}`, { replace: true })
   }
+
+  useEffect(() => {
+    const state = location.state as { pendingCta?: string } | null
+    if (state?.pendingCta === 'library_recommend' && !id) {
+      navigate(location.pathname, { replace: true, state: null })
+      void handleSend(LIBRARY_RECOMMEND_PROMPT, 'library_recommend')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

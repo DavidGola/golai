@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { streamMessage } from '@/lib/sseClient'
 import type { ProposalSseData } from '@/lib/sseClient'
+import type { ChatIntent } from '@/lib/chatIntents'
 import type { MessageRead } from '@/types/conversation'
 import type { ProposalActionType, ProposalState } from '@/types/proposal'
 
@@ -71,7 +72,7 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
     setMessages(initialMessages.map(m => toUIMessage(m, debugEventsRef.current)))
   }, [conversationId, initialMessages, isStreaming])
 
-  async function send(content: string) {
+  async function send(content: string, intent?: ChatIntent) {
     if (isStreaming) return
 
     const userMsg: UIMessage = { id: `tmp-user-${Date.now()}`, role: 'user', content }
@@ -86,7 +87,7 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
     let contentAcc = ''
 
     try {
-      for await (const event of streamMessage(conversationId, content)) {
+      for await (const event of streamMessage(conversationId, content, intent)) {
         if (ac.signal.aborted) break
 
         if (event.type === 'token') {

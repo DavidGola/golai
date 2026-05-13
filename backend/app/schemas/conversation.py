@@ -1,13 +1,19 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.proposals import ProposalRead
 
 
+class ChatIntent(str, Enum):
+    LIBRARY_RECOMMEND = "library_recommend"
+
+
 class MessageCreate(BaseModel):
     content: str
+    intent: ChatIntent | None = None
 
 
 class ConversationCreate(BaseModel):

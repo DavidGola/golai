@@ -102,7 +102,7 @@ async def send_message(
             ) from exc
 
     return StreamingResponse(
-        stream_reply(db, current_user, conv, payload.content),
+        stream_reply(db, current_user, conv, payload.content, intent=payload.intent),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
