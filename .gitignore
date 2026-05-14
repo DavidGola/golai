@@ -1,6 +1,7 @@
 # Local docs/files
 resume_golai.html
 docs/
+.backup/
 
 # Agent files
 .agents/
@@ -34,6 +35,7 @@ frontend/dist/
 
 # Scripts
 scripts/
+ops/
 
 # Nginx
 nginx.golai.example.conf

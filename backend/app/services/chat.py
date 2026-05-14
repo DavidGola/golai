@@ -41,7 +41,7 @@ async def stream_reply(
 
     canned = await short_circuit_response(db, user.id, intent)
     if canned is not None:
-        assistant_msg = await append_message(db, conversation.id, MessageRole.assistant, canned)
+        assistant_msg = await append_message(db, conversation.id, MessageRole.assistant, canned, tokens_used=0)
         if conversation.title is None:
             conversation.title = user_content[:60]
             await db.commit()
