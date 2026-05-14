@@ -64,6 +64,7 @@ jobs:
           SENTRY_ENABLED: "false"
         run: python -m pytest
 
+
   frontend:
     name: Frontend build and lint
     runs-on: ubuntu-latest

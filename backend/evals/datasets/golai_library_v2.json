@@ -1,0 +1,431 @@
+{
+  "name": "golai-library-v2",
+  "description": "Dataset d'évaluation GolAi v2 — format structuré avec dimensions scorables automatiquement.",
+  "metadata": {
+    "version": 2,
+    "domain": "golai",
+    "migrated_from": "golai_library_v1"
+  },
+  "items": [
+    {
+      "id": "weekend-short-owned",
+      "input": "J'ai deux soirs devant moi ce week-end, je lance quoi dans ma bibliothèque ?",
+      "metadata": {
+        "tags": ["library", "recommendation", "weekend", "constraints"],
+        "profile": {
+          "preferred_playtime": "short",
+          "favorite_genres": ["Action", "Roguelite"],
+          "important_criteria": ["Rythme", "Accessibilité"]
+        },
+        "library": [
+          { "title": "Hades", "status": "completed", "hours_played": 48, "user_rating": 9, "genres": ["Action", "Roguelite"], "hltb_main": 22 },
+          { "title": "A Short Hike", "status": "not_started", "hours_played": 0, "genres": ["Aventure", "Exploration"], "hltb_main": 2 },
+          { "title": "Persona 5 Royal", "status": "todo", "hours_played": 0, "genres": ["RPG"], "hltb_main": 101 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["A Short Hike"],
+        "must_not_cite": [],
+        "must_cite_property": { "hltb_main_lte": 20, "status_in": ["not_started", "todo"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "coop-not-started",
+      "input": "Je cherche un jeu coop dans ce que je possède, pas trop prise de tête.",
+      "metadata": {
+        "tags": ["library", "coop", "recommendation"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Coopération", "Aventure"],
+          "important_criteria": ["Coopération", "Accessibilité"]
+        },
+        "library": [
+          { "title": "It Takes Two", "status": "not_started", "hours_played": 0, "genres": ["Coopération", "Aventure"], "hltb_main": 14 },
+          { "title": "Cuphead", "status": "todo", "hours_played": 1, "genres": ["Action", "Plateforme"], "hltb_main": 11 },
+          { "title": "Portal 2", "status": "completed", "hours_played": 18, "user_rating": 10, "genres": ["Puzzle", "Coopération"], "hltb_main": 9 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["It Takes Two", "Cuphead"],
+        "must_not_cite": [],
+        "must_cite_property": { "status_in": ["not_started", "todo"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "completed-summary",
+      "input": "Quels sont les meilleurs jeux que j'ai déjà terminés ?",
+      "metadata": {
+        "tags": ["library", "completed", "ranking"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["RPG", "Action"],
+          "important_criteria": ["Histoire"]
+        },
+        "library": [
+          { "title": "Disco Elysium", "status": "completed", "hours_played": 32, "user_rating": 10, "genres": ["RPG", "Narratif"], "hltb_main": 23 },
+          { "title": "Elden Ring", "status": "completed", "hours_played": 120, "user_rating": 9, "genres": ["Action", "RPG"], "hltb_main": 60 },
+          { "title": "Baldur's Gate 3", "status": "todo", "hours_played": 5, "genres": ["RPG"], "hltb_main": 70 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Disco Elysium", "Elden Ring"],
+        "must_not_cite": ["Baldur's Gate 3"],
+        "must_cite_property": { "status_in": ["completed"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "do-not-overinfer-hours",
+      "input": "Vu mes heures de jeu, tu penses que j'aime surtout quel genre ?",
+      "metadata": {
+        "tags": ["library", "preference-analysis", "hours"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": [],
+          "important_criteria": ["Gameplay"]
+        },
+        "library": [
+          { "title": "Dota 2", "status": "todo", "hours_played": 900, "user_rating": 4, "genres": ["MOBA", "Stratégie"] },
+          { "title": "Celeste", "status": "completed", "hours_played": 12, "user_rating": 10, "genres": ["Plateforme"], "hltb_main": 8 },
+          { "title": "Outer Wilds", "status": "completed", "hours_played": 20, "user_rating": 10, "genres": ["Exploration", "Puzzle"], "hltb_main": 17 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "no-good-library-match",
+      "input": "Je veux un city builder chill dans ma bibliothèque.",
+      "metadata": {
+        "tags": ["library", "no-match", "constraints"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Simulation", "Stratégie"],
+          "important_criteria": ["Relaxation"]
+        },
+        "library": [
+          { "title": "Doom Eternal", "status": "not_started", "hours_played": 0, "genres": ["FPS", "Action"], "hltb_main": 14 },
+          { "title": "Sekiro", "status": "todo", "hours_played": 3, "genres": ["Action", "Souls-like"], "hltb_main": 30 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "already-owned-similar",
+      "input": "J'ai adoré Hollow Knight, je lance quoi de similaire parmi mes jeux ?",
+      "metadata": {
+        "tags": ["library", "similar", "owned-games"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Metroidvania", "Action"],
+          "important_criteria": ["Exploration", "Challenge"]
+        },
+        "library": [
+          { "title": "Hollow Knight", "status": "completed", "hours_played": 55, "user_rating": 10, "genres": ["Metroidvania", "Action"], "hltb_main": 27 },
+          { "title": "Ori and the Will of the Wisps", "status": "not_started", "hours_played": 0, "genres": ["Metroidvania", "Plateforme"], "hltb_main": 12 },
+          { "title": "Slay the Spire", "status": "todo", "hours_played": 2, "genres": ["Deckbuilder", "Roguelite"], "hltb_main": 12 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Ori and the Will of the Wisps", "Slay the Spire"],
+        "must_not_cite": ["Hollow Knight"],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "avoid-long-game-short-constraint",
+      "input": "Je veux finir quelque chose rapidement, lequel de mes jeux éviter et lequel choisir ?",
+      "metadata": {
+        "tags": ["library", "short", "comparison"],
+        "profile": {
+          "preferred_playtime": "short",
+          "favorite_genres": ["Narratif", "Puzzle"],
+          "important_criteria": ["Durée"]
+        },
+        "library": [
+          { "title": "What Remains of Edith Finch", "status": "not_started", "hours_played": 0, "genres": ["Narratif", "Exploration"], "hltb_main": 2 },
+          { "title": "The Witcher 3", "status": "todo", "hours_played": 6, "genres": ["RPG", "Open World"], "hltb_main": 52 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["What Remains of Edith Finch"],
+        "must_not_cite": [],
+        "must_cite_property": { "hltb_main_lte": 10 },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "backlog-priority",
+      "input": "Dans mon backlog, donne-moi une priorité logique pour les 3 prochains jeux.",
+      "metadata": {
+        "tags": ["library", "backlog", "ranking"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["RPG", "Puzzle"],
+          "important_criteria": ["Histoire", "Gameplay"]
+        },
+        "library": [
+          { "title": "Return of the Obra Dinn", "status": "not_started", "hours_played": 0, "genres": ["Puzzle", "Enquête"], "hltb_main": 8 },
+          { "title": "Mass Effect Legendary Edition", "status": "todo", "hours_played": 4, "genres": ["RPG", "Science-fiction"], "hltb_main": 68 },
+          { "title": "League of Legends", "status": "dropped", "hours_played": 200, "user_rating": 3, "genres": ["MOBA"] }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Return of the Obra Dinn", "Mass Effect Legendary Edition"],
+        "must_not_cite": [],
+        "must_cite_property": { "status_in": ["not_started", "todo"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "catalog-rag-general",
+      "input": "Je cherche un jeu récent avec une excellente réception joueur, tu me conseillerais quoi ?",
+      "metadata": {
+        "tags": ["catalog", "rag", "quality-signals"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Action", "RPG"],
+          "important_criteria": ["Avis joueurs"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "status-aware-next-game",
+      "input": "J'ai abandonné certains jeux, évite-moi ce style et propose un meilleur choix dans ma bibliothèque.",
+      "metadata": {
+        "tags": ["library", "status", "negative-preference"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": [],
+          "important_criteria": ["Gameplay"]
+        },
+        "library": [
+          { "title": "Darkest Dungeon", "status": "dropped", "hours_played": 7, "user_rating": 3, "genres": ["Roguelite", "Stratégie"], "hltb_main": 58 },
+          { "title": "Into the Breach", "status": "not_started", "hours_played": 0, "genres": ["Stratégie", "Tactique"], "hltb_main": 6 },
+          { "title": "Firewatch", "status": "completed", "hours_played": 4, "user_rating": 9, "genres": ["Narratif", "Exploration"], "hltb_main": 4 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Into the Breach", "Firewatch"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "studio-naughty-dog",
+      "input": "Recommande-moi des jeux de Naughty Dog.",
+      "metadata": {
+        "tags": ["catalog", "rag", "studio"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action", "Aventure"],
+          "important_criteria": ["Histoire"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": { "developer_in": ["Naughty Dog"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "release-year-2024",
+      "input": "Quels bons jeux sont sortis en 2024 ?",
+      "metadata": {
+        "tags": ["catalog", "rag", "release-year"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Action", "RPG"],
+          "important_criteria": ["Nouveauté"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": { "release_year": 2024 },
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "solo-mythologie-grecque",
+      "input": "Je veux un jeu solo sur la mythologie grecque.",
+      "metadata": {
+        "tags": ["catalog", "rag", "solo", "mythology"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Action", "RPG"],
+          "important_criteria": ["Histoire", "Exploration"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": { "mode_in": ["Single player"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": true, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "multi-guerre",
+      "input": "Je cherche un jeu multijoueur sur la guerre, le plus récent possible.",
+      "metadata": {
+        "tags": ["catalog", "rag", "multiplayer", "war"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["FPS", "Action"],
+          "important_criteria": ["Multijoueur", "Compétition"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": { "mode_in": ["Multiplayer"] },
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": true, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "expert-tone-soulslike",
+      "input": "Qu'est-ce qui rend Dark Souls si spécial par rapport aux autres Action-RPG ?",
+      "metadata": {
+        "tags": ["catalog", "expert-tone", "soulslike", "game-design"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action", "RPG", "Souls-like"],
+          "important_criteria": ["Challenge", "Gameplay"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": ["Dark Souls", "Miyazaki", "FromSoftware", "Elden Ring"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": null, "studio_reputation": null }
+      }
+    },
+    {
+      "id": "expert-tone-genre-def",
+      "input": "C'est quoi exactement la différence entre un Metroidvania et un Roguelite ?",
+      "metadata": {
+        "tags": ["catalog", "expert-tone", "genre-definition"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Indie", "Action"],
+          "important_criteria": ["Gameplay"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": null, "studio_reputation": null }
+      }
+    },
+    {
+      "id": "completeness-mass-effect",
+      "input": "Que penses-tu de la trilogie Mass Effect, du premier au troisième ?",
+      "metadata": {
+        "tags": ["catalog", "completeness", "franchise", "rpg"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["RPG", "Science-fiction"],
+          "important_criteria": ["Histoire", "Personnages"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": ["Mass Effect"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": 150,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": true, "studio_reputation": null }
+      }
+    },
+    {
+      "id": "studio-ubisoft",
+      "input": "Ubisoft ça vaut encore le coup ? Leurs jeux sont comment en ce moment ?",
+      "metadata": {
+        "tags": ["catalog", "studio-reputation", "ubisoft"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": ["Action", "Aventure"],
+          "important_criteria": ["Histoire", "Gameplay"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": ["Assassin's Creed", "Far Cry", "Watch Dogs", "Ubisoft"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": 100,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": true, "studio_reputation": true }
+      }
+    },
+    {
+      "id": "studio-fromsoftware",
+      "input": "Pourquoi FromSoftware est aussi respecté dans le monde du jeu vidéo ?",
+      "metadata": {
+        "tags": ["catalog", "studio-reputation", "fromsoftware", "soulslike"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action", "RPG"],
+          "important_criteria": ["Challenge", "Gameplay"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": ["Dark Souls", "Elden Ring", "Sekiro", "Bloodborne", "Demon's Souls", "Miyazaki"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": null, "studio_reputation": true }
+      }
+    },
+    {
+      "id": "license-assassins-creed",
+      "input": "La licence Assassin's Creed vaut encore le coup ? C'était mieux avant ?",
+      "metadata": {
+        "tags": ["catalog", "studio-reputation", "franchise", "assassins-creed"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action", "Aventure"],
+          "important_criteria": ["Histoire", "Open World"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": ["Assassin's Creed"],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "min_word_count": 100,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": true, "studio_reputation": true }
+      }
+    }
+  ]
+}

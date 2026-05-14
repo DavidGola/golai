@@ -8,6 +8,7 @@ from app.observability import captured_input, observe, safe_update
 _COLUMNS = """
         g.id::text,
         g.title,
+        g.developer,
         g.release_date,
         g.summary,
         g.hltb_main,
@@ -48,7 +49,7 @@ async def retrieve_games(db: AsyncSession, query: str, top_k: int | None = None)
 
     k = top_k or settings.rag_top_k
     lex_k = min(5, k)
-    metadata = {"top_k": k, "embedding_model": settings.embedding_model}
+    metadata = {"top_k": str(k), "embedding_model": settings.embedding_model}
 
     with observe("rag.retrieve_games", input=captured_input(query), metadata=metadata) as observation:
         # Lexical pass (trigram) — catches title variants like "Portal 1" → "Portal"
@@ -74,7 +75,7 @@ async def retrieve_games(db: AsyncSession, query: str, top_k: int | None = None)
                 results.append(row)
         results = results[:k]
 
-        merged_meta = {**metadata, "lexical_count": len(lexical), "vector_count": len(semantic), "merged_count": len(results)}
+        merged_meta = {**metadata, "lexical_count": str(len(lexical)), "vector_count": str(len(semantic)), "merged_count": str(len(results))}
         output = [
             {"id": row.get("id"), "title": row.get("title")}
             for row in results
