@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi_users import schemas
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.user import PlaytimePreference
 from app.schemas.taxonomy import CriterionRead, GenreRead
@@ -42,3 +42,7 @@ class UserPatchMe(schemas.BaseUserUpdate):
     preferred_platform: STORE_PLATFORMS | None = None
     favorite_genre_ids: list[int] | None = None
     important_criterion_ids: list[int] | None = None
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1)

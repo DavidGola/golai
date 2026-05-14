@@ -41,12 +41,37 @@ async def test_patch_me_password_and_relogin(client, user_factory):
     assert r3.status_code == 400
 
 
+async def test_delete_me_unauthenticated(client):
+    r = await client.request("DELETE", "/users/me", json={"password": "Password123!"})
+    assert r.status_code == 401
+
+
+async def test_delete_me_requires_password(client, user_factory):
+    _, token = await user_factory(email="del_nopass@test.fr", username="del_nopass")
+    auth = {"Authorization": f"Bearer {token}"}
+
+    r = await client.request("DELETE", "/users/me", headers=auth)
+    assert r.status_code == 422
+
+
+async def test_delete_me_wrong_password(client, user_factory):
+    email = "del_wrong@test.fr"
+    _, token = await user_factory(email=email, username="del_wrong")
+    auth = {"Authorization": f"Bearer {token}"}
+
+    r = await client.request("DELETE", "/users/me", json={"password": "WrongPass!"}, headers=auth)
+    assert r.status_code == 403
+
+    r2 = await client.post("/auth/jwt/login", data={"username": email, "password": "Password123!"})
+    assert r2.status_code == 200
+
+
 async def test_delete_me(client, user_factory):
     email = "del@test.fr"
     _, token = await user_factory(email=email, username="deluser")
     auth = {"Authorization": f"Bearer {token}"}
 
-    r = await client.delete("/users/me", headers=auth)
+    r = await client.request("DELETE", "/users/me", json={"password": "Password123!"}, headers=auth)
     assert r.status_code == 204
 
     r2 = await client.post("/auth/jwt/login", data={"username": email, "password": "Password123!"})

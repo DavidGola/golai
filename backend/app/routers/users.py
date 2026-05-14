@@ -5,7 +5,7 @@ from app.auth.deps import current_active_user
 from app.auth.users import get_user_manager, UserManager
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserPatchMe, UserProfile
+from app.schemas.user import DeleteAccountRequest, UserPatchMe, UserProfile
 from app.services import users as user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -47,7 +47,14 @@ async def patch_me(
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_me(
+    payload: DeleteAccountRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user),
+    user_manager: UserManager = Depends(get_user_manager),
 ):
+    verified, _ = user_manager.password_helper.verify_and_update(
+        payload.password, current_user.hashed_password
+    )
+    if not verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mot de passe incorrect")
     await user_service.delete_user(db, current_user)

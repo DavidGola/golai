@@ -1,7 +1,14 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 
-from app.models.conversation import Conversation
-from app.models.taxonomy import user_favorite_genres as ufg_table, user_important_criteria as uic_table
+from app.models.conversation import Conversation, Message, MessageRole
+from app.models.message_proposal import MessageProposal, ProposalActionType
+from app.models.rate_limit import RateLimitBucket
+from app.models.taxonomy import (
+    user_favorite_genres as ufg_table,
+    user_important_criteria as uic_table,
+)
 from app.models.user_game import UserGame, UserGameStatus
 from app.services.users import (
     delete_user,
@@ -57,18 +64,93 @@ async def test_set_important_criteria_replaces(db_session, user_a, seeded_criter
     assert [r.criterion_id for r in rows] == [c1.id]
 
 
-async def test_delete_user_cascades(db_session, user_a, seeded_game, conversation_a):  # noqa: ARG001
+async def test_delete_user_cascades(
+    db_session, user_a, seeded_game, seeded_genres, seeded_criteria
+):
+    g1, _ = seeded_genres
+    c1, _ = seeded_criteria
+
+    # user_game
     ug = UserGame(user_id=user_a.id, game_id=seeded_game.id, status=UserGameStatus.todo)
     db_session.add(ug)
+
+    # conversation → message → proposal
+    conv = Conversation(user_id=user_a.id, title="cascade test")
+    db_session.add(conv)
+    await db_session.flush()
+
+    msg = Message(conversation_id=conv.id, role=MessageRole.user, content="hello")
+    db_session.add(msg)
+    await db_session.flush()
+
+    proposal = MessageProposal(
+        message_id=msg.id,
+        action_type=ProposalActionType.add_to_library,
+        payload={"game_id": str(seeded_game.id)},
+    )
+    db_session.add(proposal)
+
+    # taxonomie user
+    await db_session.execute(
+        ufg_table.insert().values(user_id=user_a.id, genre_id=g1.id)
+    )
+    await db_session.execute(
+        uic_table.insert().values(user_id=user_a.id, criterion_id=c1.id)
+    )
+
+    now = datetime.now(tz=timezone.utc)
+    auth_bucket = RateLimitBucket(
+        bucket_key=f"chat:auth:{user_a.id}",
+        scope="auth",
+        window_start=now,
+        request_count=5,
+    )
+    anon_bucket = RateLimitBucket(
+        bucket_key="chat:anonymous:1.2.3.4",
+        scope="anonymous",
+        window_start=now,
+        request_count=3,
+    )
+    db_session.add_all([auth_bucket, anon_bucket])
     await db_session.commit()
 
+    user_id = user_a.id
     await delete_user(db_session, user_a)
 
-    convs = (await db_session.execute(
-        select(Conversation).where(Conversation.user_id == user_a.id)
+    assert (await db_session.execute(
+        select(Conversation).where(Conversation.user_id == user_id)
+    )).scalars().all() == []
+
+    assert (await db_session.execute(
+        select(Message).where(Message.id == msg.id)
+    )).scalars().all() == []
+
+    assert (await db_session.execute(
+        select(MessageProposal).where(MessageProposal.id == proposal.id)
+    )).scalars().all() == []
+
+    assert (await db_session.execute(
+        select(UserGame).where(UserGame.user_id == user_id)
+    )).scalars().all() == []
+
+    assert (await db_session.execute(
+        select(ufg_table).where(ufg_table.c.user_id == user_id)
+    )).fetchall() == []
+
+    assert (await db_session.execute(
+        select(uic_table).where(uic_table.c.user_id == user_id)
+    )).fetchall() == []
+
+    assert (await db_session.execute(
+        select(RateLimitBucket).where(
+            RateLimitBucket.bucket_key == f"chat:auth:{user_id}"
+        )
+    )).scalars().all() == []
+
+    # le bucket anonyme doit survivre
+    surviving = (await db_session.execute(
+        select(RateLimitBucket).where(
+            RateLimitBucket.bucket_key == "chat:anonymous:1.2.3.4"
+        )
     )).scalars().all()
-    games = (await db_session.execute(
-        select(UserGame).where(UserGame.user_id == user_a.id)
-    )).scalars().all()
-    assert convs == []
-    assert games == []
+    assert len(surviving) == 1

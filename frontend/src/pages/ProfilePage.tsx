@@ -8,6 +8,7 @@ import { tokenStorage } from '@/lib/tokenStorage'
 import { queryClient } from '@/lib/queryClient'
 import SidebarLeft from '@/components/layout/SidebarLeft'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import DeleteAccountModal from '@/components/profile/DeleteAccountModal'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -26,10 +27,8 @@ export default function ProfilePage() {
 
   const initial = user?.username?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?'
 
-  async function handleDeleteAccount() {
-    try {
-      await apiClient.delete('/users/me')
-    } catch { /* ignore */ }
+  async function handleDeleteAccount(password: string) {
+    await apiClient.delete('/users/me', { data: { password } })
     tokenStorage.clear()
     queryClient.clear()
     navigate('/login', { replace: true })
@@ -128,12 +127,8 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <ConfirmModal
+      <DeleteAccountModal
         open={deleteAccountOpen}
-        title="Supprimer ton compte"
-        message="Cette action est irréversible. Toutes tes conversations et données seront supprimées définitivement."
-        confirmLabel="Supprimer mon compte"
-        danger
         onConfirm={handleDeleteAccount}
         onCancel={() => setDeleteAccountOpen(false)}
       />

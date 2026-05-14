@@ -2,6 +2,7 @@ from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.rate_limit import RateLimitBucket
 from app.models.taxonomy import user_favorite_genres, user_important_criteria
 from app.models.user import User
 
@@ -41,5 +42,10 @@ async def set_important_criteria(db: AsyncSession, user_id, criterion_ids: list[
 
 
 async def delete_user(db: AsyncSession, user: User) -> None:
+    await db.execute(
+        delete(RateLimitBucket).where(
+            RateLimitBucket.bucket_key == f"chat:auth:{user.id}"
+        )
+    )
     await db.delete(user)
     await db.commit()
