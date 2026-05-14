@@ -1,9 +1,12 @@
 import { tokenStorage } from '@/lib/tokenStorage'
 import type { ChatIntent } from '@/lib/chatIntents'
+import { CitedGameSchema } from '@/types/store'
+import type { CitedGame } from '@/types/store'
 
 export type AnonymousSseEvent =
   | { type: 'token'; data: string }
   | { type: 'tool'; name: string }
+  | { type: 'cited_games'; games: CitedGame[] }
   | { type: 'done'; tokensUsed: number | null }
   | { type: 'error'; message: string }
 
@@ -27,12 +30,15 @@ export type ToolResultSseData = {
   result_json?: string
 }
 
+export type { CitedGame }
+
 export type SseEvent =
   | { type: 'token'; data: string }
   | { type: 'tool'; name: string }
   | { type: 'tool_call'; data: ToolCallSseData }
   | { type: 'tool_result'; data: ToolResultSseData }
   | { type: 'proposal'; data: ProposalSseData }
+  | { type: 'cited_games'; games: CitedGame[] }
   | { type: 'done'; assistantMessageId: string; tokensUsed: number | null }
   | { type: 'error'; message: string }
 
@@ -100,6 +106,13 @@ export async function* streamMessage(
         } else if (eventType === 'proposal') {
           const parsed = JSON.parse(eventData) as ProposalSseData
           yield { type: 'proposal', data: parsed }
+        } else if (eventType === 'cited_games') {
+          const raw = JSON.parse(eventData) as { games: unknown[] }
+          const games = raw.games.flatMap(g => {
+            const result = CitedGameSchema.safeParse(g)
+            return result.success ? [result.data] : []
+          })
+          yield { type: 'cited_games', games }
         } else if (eventType === 'done') {
           const parsed = JSON.parse(eventData) as {
             assistant_message_id: string
@@ -174,6 +187,13 @@ export async function* streamAnonymousMessage(
         } else if (eventType === 'tool') {
           const parsed = JSON.parse(eventData) as { name: string }
           yield { type: 'tool', name: parsed.name }
+        } else if (eventType === 'cited_games') {
+          const raw = JSON.parse(eventData) as { games: unknown[] }
+          const games = raw.games.flatMap(g => {
+            const result = CitedGameSchema.safeParse(g)
+            return result.success ? [result.data] : []
+          })
+          yield { type: 'cited_games', games }
         } else if (eventType === 'done') {
           const parsed = JSON.parse(eventData) as { tokens_used: number | null }
           yield { type: 'done', tokensUsed: parsed.tokens_used }

@@ -11,6 +11,7 @@ from pydantic_ai.messages import TextPart, TextPartDelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.agent import AnonymousAgentDeps, anonymous_agent, history_dicts_to_messages
+from app.ai.citations import cited_games_sse_event
 from app.config import settings
 from app.observability import captured_input, observe, safe_update
 from app.schemas.chat import AnonymousHistoryMessage
@@ -74,5 +75,10 @@ async def stream_anonymous_reply(
             output=captured_input(final_output),
             metadata={**metadata, "status": "success", **(usage_info or {})},
         )
+
+    if final_output:
+        cited_sse, _ = await cited_games_sse_event(db, final_output)
+        if cited_sse:
+            yield cited_sse
 
     yield f"event: done\ndata: {json.dumps({'tokens_used': usage_info.get('total_tokens') if usage_info else None})}\n\n"

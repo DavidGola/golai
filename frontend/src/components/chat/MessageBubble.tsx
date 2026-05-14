@@ -3,6 +3,8 @@ import remarkGfm from 'remark-gfm'
 import type { UIMessage } from '@/hooks/useChatStream'
 import ProposalCard from '@/components/chat/ProposalCard'
 import DebugPanel from '@/components/chat/DebugPanel'
+import CitedGamesRenderer from '@/components/chat/CitedGamesRenderer'
+import { useAuth } from '@/auth/useAuth'
 
 function toolLabel(toolName: string): string {
   if (toolName === 'search_games' || toolName === 'search_games_anon') {
@@ -17,6 +19,7 @@ function toolLabel(toolName: string): string {
 }
 
 export default function MessageBubble({ message }: { message: UIMessage }) {
+  const { user } = useAuth()
   const isUser = message.role === 'user'
 
   return (
@@ -57,20 +60,28 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
           </span>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.animatingChars != null
-                ? message.content.slice(0, message.animatingChars)
-                : message.content}
-            </ReactMarkdown>
-            {message.animatingChars != null && (
-              <span
-                style={{
-                  display: 'inline-block', width: 2, height: 14,
-                  background: '#5B7EFF', borderRadius: 1,
-                  marginLeft: 2, verticalAlign: 'bottom', transform: 'translateY(2px)',
-                  animation: 'blink 0.9s step-end infinite',
-                }}
+            {message.animatingChars != null ? (
+              <>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content.slice(0, message.animatingChars)}
+                </ReactMarkdown>
+                <span
+                  style={{
+                    display: 'inline-block', width: 2, height: 14,
+                    background: '#5B7EFF', borderRadius: 1,
+                    marginLeft: 2, verticalAlign: 'bottom', transform: 'translateY(2px)',
+                    animation: 'blink 0.9s step-end infinite',
+                  }}
+                />
+              </>
+            ) : message.citedGames && message.citedGames.length > 0 ? (
+              <CitedGamesRenderer
+                content={message.content}
+                citedGames={message.citedGames}
+                preferredPlatform={user?.preferred_platform ?? null}
               />
+            ) : (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
             )}
             {message.animatingChars == null && message.proposals?.map(proposal => (
               <ProposalCard key={proposal.id} proposal={proposal} />

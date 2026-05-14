@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { STORE_PLATFORMS } from '@/types/store'
 
 export const GenreReadSchema = z.object({
   id: z.number(),
@@ -22,6 +23,7 @@ export const UserReadSchema = z.object({
   is_superuser: z.boolean(),
   is_verified: z.boolean(),
   preferred_playtime: z.enum(['short', 'medium', 'long']).nullable(),
+  preferred_platform: z.enum(STORE_PLATFORMS).nullable().optional(),
   created_at: z.string(),
 })
 

@@ -5,6 +5,7 @@ import type { ProposalSseData } from '@/lib/sseClient'
 import type { ChatIntent } from '@/lib/chatIntents'
 import type { MessageRead } from '@/types/conversation'
 import type { ProposalActionType, ProposalState } from '@/types/proposal'
+import type { CitedGame } from '@/types/store'
 
 export interface UIProposal {
   id: string
@@ -27,6 +28,7 @@ export interface UIMessage {
   animatingChars?: number | null
   proposals?: UIProposal[]
   debugEvents?: DebugEvent[]
+  citedGames?: CitedGame[]
 }
 
 function sseToUIProposal(data: ProposalSseData): UIProposal {
@@ -52,6 +54,7 @@ function toUIMessage(m: MessageRead, debugEvents?: Map<string, DebugEvent[]>): U
           state: p.state,
         }))
       : undefined,
+    citedGames: m.cited_games ?? undefined,
     debugEvents: debugEvents?.get(m.id),
   }
 }
@@ -162,6 +165,12 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
                     debugEvents: [...(m.debugEvents ?? []), dbg],
                   }
                 : m,
+            ),
+          )
+        } else if (event.type === 'cited_games') {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantMsg.id ? { ...m, citedGames: event.games } : m,
             ),
           )
         } else if (event.type === 'done') {

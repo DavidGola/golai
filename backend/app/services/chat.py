@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 logger = logging.getLogger(__name__)
 
 from app.ai.agent import AgentDeps
+from app.ai.citations import cited_games_sse_event
 from app.ai.stream import stream_agent
 from app.models.conversation import Conversation, Message, MessageRole
 from app.models.message_proposal import MessageProposal, ProposalActionType, ProposalState
@@ -137,6 +138,10 @@ async def stream_reply(
                 metadata=completion_metadata,
             )
 
+            cited_sse, cited_dicts = await cited_games_sse_event(db, final_output)
+            if cited_sse:
+                yield cited_sse
+
             assistant_msg = await append_message(
                 db,
                 conversation.id,
@@ -145,6 +150,7 @@ async def stream_reply(
                 tokens,
                 cache_read_tokens=cache_read or None,
                 cache_write_tokens=cache_write or None,
+                cited_games=cited_dicts,
             )
 
             for proposal_data in pending_proposals:

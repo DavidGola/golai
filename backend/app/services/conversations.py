@@ -72,6 +72,7 @@ async def append_message(
     tokens_used: int | None = None,
     cache_read_tokens: int | None = None,
     cache_write_tokens: int | None = None,
+    cited_games: list[dict] | None = None,
 ) -> Message:
     msg = Message(
         conversation_id=conv_id,
@@ -80,6 +81,7 @@ async def append_message(
         tokens_used=tokens_used,
         cache_read_tokens=cache_read_tokens,
         cache_write_tokens=cache_write_tokens,
+        cited_games=cited_games,
     )
     db.add(msg)
     await db.commit()

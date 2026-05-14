@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { ProposalReadSchema } from '@/types/proposal'
+import { CitedGameSchema } from '@/types/store'
 
 export const MessageReadSchema = z.object({
   id: z.string(),
   role: z.enum(['user', 'assistant']),
   content: z.string(),
   tokens_used: z.number().nullable(),
+  cited_games: z.array(CitedGameSchema).nullable().optional(),
   created_at: z.string(),
   proposals: z.array(ProposalReadSchema).default([]),
 })

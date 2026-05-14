@@ -5,6 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.proposals import ProposalRead
+from app.schemas.store import CitedGame
 
 
 class ChatIntent(str, Enum):
@@ -40,6 +41,7 @@ class MessageRead(BaseModel):
     tokens_used: int | None = None
     cache_read_tokens: int | None = None
     cache_write_tokens: int | None = None
+    cited_games: list[CitedGame] | None = None
     created_at: datetime
     proposals: list[ProposalRead] = []
 
