@@ -165,7 +165,9 @@ async def test_intent_library_recommend_empty_library_short_circuits(
     assert r.status_code == 200
     assert "event: token" in r.text
     assert "event: done" in r.text
-    assert "bibliothèque est encore vide" in r.text
+    token_line = next(l for l in r.text.splitlines() if l.startswith("data:") and "text" in l)
+    token_data = json.loads(token_line[len("data: "):])
+    assert "bibliothèque est encore vide" in token_data["text"]
     assert not agent_called
 
     done_line = next(l for l in r.text.splitlines() if l.startswith("data:") and "assistant_message_id" in l)
