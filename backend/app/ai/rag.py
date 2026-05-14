@@ -18,12 +18,20 @@ _COLUMNS = """
         g.steam_score,
         g.steam_total_reviews,
         g.steam_reviews_summary,
+        g.cover_url,
+        g.steam_id,
         COALESCE(
             (SELECT string_agg(gr.name, ', ')
              FROM games_genres gg JOIN genres gr ON gr.id = gg.genre_id
              WHERE gg.game_id = g.id),
             ''
-        ) AS genres"""
+        ) AS genres,
+        COALESCE(
+            (SELECT string_agg(DISTINCT pl.name, ', ')
+             FROM games_platforms gp JOIN platforms pl ON pl.id = gp.platform_id
+             WHERE gp.game_id = g.id),
+            ''
+        ) AS platforms"""
 
 _RAG_QUERY = text(f"""
     SELECT {_COLUMNS}

@@ -4,7 +4,6 @@ import type { UIMessage } from '@/hooks/useChatStream'
 import ProposalCard from '@/components/chat/ProposalCard'
 import DebugPanel from '@/components/chat/DebugPanel'
 import CitedGamesRenderer from '@/components/chat/CitedGamesRenderer'
-import { useAuth } from '@/auth/useAuth'
 
 function toolLabel(toolName: string): string {
   if (toolName === 'search_games' || toolName === 'search_games_anon') {
@@ -19,7 +18,6 @@ function toolLabel(toolName: string): string {
 }
 
 export default function MessageBubble({ message }: { message: UIMessage }) {
-  const { user } = useAuth()
   const isUser = message.role === 'user'
 
   return (
@@ -78,7 +76,6 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
               <CitedGamesRenderer
                 content={message.content}
                 citedGames={message.citedGames}
-                preferredPlatform={user?.preferred_platform ?? null}
               />
             ) : (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>

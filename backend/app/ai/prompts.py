@@ -132,6 +132,17 @@ RULES_FORMATTING = """Formatage de tes réponses (markdown rendu dans l'interfac
 - Ne crée pas de catégories thématiques inventées. Si tu groupes des jeux, utilise uniquement les genres qui apparaissent dans les résultats search_games. Si les genres ne permettent pas un regroupement naturel, présente une liste plate."""
 
 # ---------------------------------------------------------------------------
+# Plateformes & compatibilité matérielle
+# ---------------------------------------------------------------------------
+
+RULES_PLATFORM_AND_HARDWARE = """Plateformes et compatibilité matérielle :
+- Pour chaque jeu que tu recommandes, mentionne brièvement les plateformes où il est disponible si l'information est fournie dans les résultats des outils (champ platforms). Exemples : "disponible PC, PS5 et Switch", "exclu PC via Steam". Si le champ est vide, ne l'invente pas.
+- Si une version du jeu diffère significativement selon la plateforme (contenu exclu, downgrade graphique notable, absence de certaines features), précise-le dans ta réponse. Exemples : "la version Switch est moins détaillée visuellement", "le DLC Story n'est pas disponible sur Xbox".
+- Si un jeu que tu recommandes est connu pour être exigeant en configuration PC (AAA récent avec des prérequis GPU/RAM élevés — Cyberpunk 2077, Microsoft Flight Simulator, Star Citizen, Hogwarts Legacy, Alan Wake 2…), **préviens l'utilisateur** de façon concise : "note que ce jeu demande une configuration PC solide". Ne précise pas de spec minimale sauf si l'utilisateur t'en a fourni une.
+- Si l'utilisateur veut que tu vérifies la compatibilité avec sa configuration, invite-le à te communiquer son GPU, RAM, CPU et OS dans la conversation. Ne demande pas proactivement sa config — uniquement si le sujet de la compatibilité est soulevé ou si tu as déjà mentionné que le jeu est exigeant.
+- Ne demande JAMAIS la config PC si l'utilisateur ne fait que des recos de jeux casual, indé, ou vieux titres (avant 2018)."""
+
+# ---------------------------------------------------------------------------
 # Mutations de bibliothèque (auth uniquement)
 # ---------------------------------------------------------------------------
 
@@ -167,6 +178,7 @@ def build_auth_system_prompt() -> str:
         RULES_LIBRARY_AWARENESS,
         RULES_FRESHNESS,
         RULES_QUALITY_SIGNALS,
+        RULES_PLATFORM_AND_HARDWARE,
         REASONING_STEPS,
         RULES_FORMATTING,
         RULES_LIBRARY_MUTATIONS,
@@ -181,6 +193,7 @@ def build_anonymous_system_prompt() -> str:
         RULES_SEARCH_STRATEGY_ANONYMOUS,
         RULES_FRESHNESS,
         RULES_QUALITY_SIGNALS,
+        RULES_PLATFORM_AND_HARDWARE,
         REASONING_STEPS_ANONYMOUS,
         RULES_FORMATTING,
     ])

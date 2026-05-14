@@ -13,6 +13,7 @@ export const CitedGameSchema = z.object({
   title: z.string(),
   cover_url: z.string().nullable(),
   store_links: z.array(StoreLinkSchema).default([]),
+  platforms: z.array(z.string()).default([]),
 })
 
 export type StoreLink = z.infer<typeof StoreLinkSchema>

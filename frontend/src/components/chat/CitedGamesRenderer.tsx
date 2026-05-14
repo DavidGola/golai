@@ -1,12 +1,11 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import GameInlineCard from '@/components/chat/GameInlineCard'
-import type { CitedGame, StorePlatform } from '@/types/store'
+import type { CitedGame } from '@/types/store'
 
 interface Props {
   content: string
   citedGames: CitedGame[]
-  preferredPlatform?: StorePlatform | null
 }
 
 interface Segment {
@@ -30,7 +29,7 @@ function buildSegments(content: string, citedGames: CitedGame[]): Segment[] {
     })
 }
 
-export default function CitedGamesRenderer({ content, citedGames, preferredPlatform }: Props) {
+export default function CitedGamesRenderer({ content, citedGames }: Props) {
   const segments = buildSegments(content, citedGames)
 
   return (
@@ -46,7 +45,7 @@ export default function CitedGamesRenderer({ content, citedGames, preferredPlatf
         >
           {seg.game && (
             <div style={{ flexShrink: 0, width: 90 }}>
-              <GameInlineCard game={seg.game} preferredPlatform={preferredPlatform} />
+              <GameInlineCard game={seg.game} />
             </div>
           )}
           {!seg.game && <div style={{ width: 0 }} />}

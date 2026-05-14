@@ -1,5 +1,6 @@
-import { pickStoreLink, STORE_LABEL } from '@/lib/storeLinks'
-import type { CitedGame, StorePlatform } from '@/types/store'
+import { sortedStoreLinks } from '@/lib/storeLinks'
+import StoreLogoLink from '@/components/chat/StoreLogoLink'
+import type { CitedGame } from '@/types/store'
 
 const COVER_GRADIENTS = [
   'linear-gradient(135deg, #1a1a2e, #16213e)',
@@ -19,11 +20,11 @@ function coverGradient(id: string) {
 
 interface Props {
   game: CitedGame
-  preferredPlatform?: StorePlatform | null
 }
 
-export default function GameInlineCard({ game, preferredPlatform }: Props) {
-  const link = pickStoreLink(game.store_links, preferredPlatform)
+export default function GameInlineCard({ game }: Props) {
+  const links = sortedStoreLinks(game.store_links)
+  const platforms = game.platforms ?? []
 
   return (
     <div style={{
@@ -74,29 +75,34 @@ export default function GameInlineCard({ game, preferredPlatform }: Props) {
           {game.title}
         </p>
 
-        {link ? (
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-block',
-              marginTop: 'auto',
-              fontSize: 12,
-              color: '#5B7EFF',
-              textDecoration: 'none',
-              fontWeight: 500,
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#7B9EFF' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#5B7EFF' }}
-          >
-            {STORE_LABEL[link.platform]} ↗
-          </a>
-        ) : (
-          <span style={{ fontSize: 12, color: '#555555', marginTop: 'auto' }}>
-            Aucun lien store
-          </span>
+        {platforms.length > 0 && (
+          <p style={{
+            margin: 0,
+            fontSize: 12,
+            color: '#666666',
+            lineHeight: 1.3,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {platforms.join(' · ')}
+          </p>
         )}
+
+        <div style={{ marginTop: 'auto' }}>
+          {links.length > 0 ? (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {links.map(link => (
+                <StoreLogoLink key={link.platform} platform={link.platform} url={link.url} />
+              ))}
+            </div>
+          ) : (
+            <span style={{ fontSize: 12, color: '#555555' }}>
+              Aucun lien store
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )

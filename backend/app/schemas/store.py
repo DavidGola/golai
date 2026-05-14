@@ -17,3 +17,4 @@ class CitedGame(BaseModel):
     title: str
     cover_url: str | None = None
     store_links: list[StoreLink] = []
+    platforms: list[str] = []

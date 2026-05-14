@@ -12,11 +12,20 @@ _YEAR_RE = re.compile(r"\s*\(\d{4}\)\s*$")
 _SIMILARITY_THRESHOLD = 0.45
 
 _CITATION_QUERY = text("""
-    SELECT id, title, cover_url, steam_id
-    FROM games
-    WHERE title % :title
-      AND similarity(title, :title) >= :threshold
-    ORDER BY similarity(title, :title) DESC
+    SELECT
+        g.id,
+        g.title,
+        g.cover_url,
+        g.steam_id,
+        g.store_urls,
+        STRING_AGG(DISTINCT p.name, ', ' ORDER BY p.name) AS platforms
+    FROM games g
+    LEFT JOIN games_platforms gp ON gp.game_id = g.id
+    LEFT JOIN platforms p ON p.id = gp.platform_id
+    WHERE g.title % :title
+      AND similarity(g.title, :title) >= :threshold
+    GROUP BY g.id, g.title, g.cover_url, g.steam_id, g.store_urls
+    ORDER BY similarity(g.title, :title) DESC
     LIMIT 1
 """)
 
@@ -49,16 +58,25 @@ async def cite_games(db: AsyncSession, markdown: str) -> list[CitedGame]:
             continue
         seen_ids.add(game_id)
         store_links: list[StoreLink] = []
-        if row["steam_id"] is not None:
-            store_links.append(StoreLink(
+        store_urls: dict = row["store_urls"] or {}
+        for platform, url in store_urls.items():
+            try:
+                store_links.append(StoreLink(platform=platform, url=url))
+            except Exception:
+                pass
+        # Fallback Steam depuis steam_id si absent de store_urls
+        if "steam" not in store_urls and row["steam_id"] is not None:
+            store_links.insert(0, StoreLink(
                 platform="steam",
                 url=f"https://store.steampowered.com/app/{row['steam_id']}/",
             ))
+        platforms: list[str] = [p.strip() for p in (row["platforms"] or "").split(",") if p.strip()]
         cited.append(CitedGame(
             id=game_id,
             title=row["title"],
             cover_url=row["cover_url"],
             store_links=store_links,
+            platforms=platforms,
         ))
 
     return cited

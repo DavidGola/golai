@@ -31,14 +31,34 @@ def _extract_developer(involved_companies: list) -> str | None:
     return None
 
 
-def _extract_steam_id(external_games: list) -> int | None:
+_IGDB_STORE_CATEGORY: dict[int, str] = {
+    1: "steam",
+    5: "gog",
+    11: "xbox",
+    13: "nintendo",
+    26: "playstation",
+    36: "epic",
+}
+
+
+def _extract_store_data(external_games: list) -> tuple[int | None, dict[str, str]]:
+    """Retourne (steam_id, store_urls) depuis la liste external_games IGDB."""
+    steam_id: int | None = None
+    store_urls: dict[str, str] = {}
     for eg in external_games:
-        if eg.get("category") == 1:  # category 1 = Steam
+        category = eg.get("category")
+        store_key = _IGDB_STORE_CATEGORY.get(category)
+        if not store_key:
+            continue
+        url = eg.get("url")
+        if url:
+            store_urls[store_key] = url
+        if category == 1:
             try:
-                return int(eg["uid"])
+                steam_id = int(eg["uid"])
             except (KeyError, ValueError):
                 pass
-    return None
+    return steam_id, store_urls
 
 
 def _extract_steam_id_from_websites(websites: list) -> int | None:
@@ -126,9 +146,11 @@ async def upsert_game(
     kw = igdb_game.get("keywords") or []
     game.keywords = [k["name"] for k in kw if k.get("name")] or None
 
-    steam_id = _extract_steam_id(igdb_game.get("external_games") or [])
+    steam_id, store_urls = _extract_store_data(igdb_game.get("external_games") or [])
     if not steam_id:
         steam_id = _extract_steam_id_from_websites(igdb_game.get("websites") or [])
+        if steam_id and "steam" not in store_urls:
+            store_urls["steam"] = f"https://store.steampowered.com/app/{steam_id}/"
     if steam_id:
         with session.no_autoflush:
             conflict = (await session.execute(
@@ -138,6 +160,9 @@ async def upsert_game(
             game.steam_id = steam_id
         else:
             logger.warning("[%s] Steam id %d already used, skipping", title, steam_id)
+            store_urls.pop("steam", None)
+    if store_urls:
+        game.store_urls = store_urls
 
     # Flush to get game.id for junction tables
     await session.flush()

@@ -4,7 +4,7 @@ from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, SmallInteger, String, Text, UniqueConstraint, Boolean
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -49,6 +49,9 @@ class Game(Base):
     # OpenCritic
     opencritic_score: Mapped[int | None] = mapped_column(SmallInteger)
     opencritic_excerpts: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+
+    # URLs stores (steam, epic, gog, xbox, playstation, nintendo)
+    store_urls: Mapped[dict[str, str] | None] = mapped_column(JSONB, nullable=True)
 
     # IDs sources externes
     igdb_id: Mapped[int | None] = mapped_column(Integer, unique=True)

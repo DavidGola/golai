@@ -9,6 +9,14 @@ export const STORE_LABEL: Record<StorePlatform, string> = {
   gog: 'GOG',
 }
 
+export const STORE_ORDER: StorePlatform[] = ['steam', 'epic', 'gog', 'xbox', 'playstation', 'nintendo']
+
+export function sortedStoreLinks(links: StoreLink[]): StoreLink[] {
+  return [...links].sort(
+    (a, b) => STORE_ORDER.indexOf(a.platform) - STORE_ORDER.indexOf(b.platform),
+  )
+}
+
 export function pickStoreLink(
   links: StoreLink[],
   preferred: StorePlatform | null | undefined,
