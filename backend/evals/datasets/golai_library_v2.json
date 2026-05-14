@@ -426,6 +426,71 @@
         "min_word_count": 100,
         "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": null, "expert_tone": true, "completeness": true, "studio_reputation": true }
       }
+    },
+    {
+      "id": "catalog-search-before-clarify",
+      "input": "Je cherche quelque chose de bien noté sur Steam sorti récemment, peu importe le genre.",
+      "metadata": {
+        "tags": ["catalog", "rag", "fix-0", "search-before-clarify"],
+        "profile": {
+          "preferred_playtime": "medium",
+          "favorite_genres": [],
+          "important_criteria": ["Avis joueurs"]
+        },
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": null, "solo_multi_diff": null, "honest_no_invention": true }
+      }
+    },
+    {
+      "id": "must-not-cite-in-exclusion",
+      "input": "J'ai adoré Elden Ring, qu'est-ce que tu me conseilles dans ma bibliothèque qui s'en rapproche ?",
+      "metadata": {
+        "tags": ["library", "similar", "fix-0b", "must-not-cite-exclusion"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action-RPG", "Soulslike"],
+          "important_criteria": ["Challenge", "Exploration"]
+        },
+        "library": [
+          { "title": "Elden Ring", "status": "completed", "hours_played": 120, "user_rating": 10, "genres": ["Action-RPG", "Soulslike"], "hltb_main": 58 },
+          { "title": "Lies of P", "status": "not_started", "hours_played": 0, "genres": ["Soulslike", "Action"], "hltb_main": 30 },
+          { "title": "Remnant II", "status": "todo", "hours_played": 0, "genres": ["Action-RPG", "Shooter"], "hltb_main": 15 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Lies of P", "Remnant II"],
+        "must_not_cite": ["Elden Ring"],
+        "must_cite_property": null,
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
+    },
+    {
+      "id": "cot-multi-criteria",
+      "input": "J'aime les RPG avec une histoire forte, mais j'ai peu de temps en ce moment. Qu'est-ce que je devrais lancer dans ce que j'ai ?",
+      "metadata": {
+        "tags": ["library", "cot", "multi-criteria", "time-constraint"],
+        "profile": {
+          "preferred_playtime": "short",
+          "favorite_genres": ["RPG", "Narratif"],
+          "important_criteria": ["Histoire", "Durée"]
+        },
+        "library": [
+          { "title": "Disco Elysium", "status": "not_started", "hours_played": 0, "genres": ["RPG", "Narratif"], "hltb_main": 22 },
+          { "title": "Baldur's Gate 3", "status": "todo", "hours_played": 5, "genres": ["RPG", "Tactique"], "hltb_main": 100 },
+          { "title": "What Remains of Edith Finch", "status": "not_started", "hours_played": 0, "genres": ["Narratif", "Exploration"], "hltb_main": 2 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": ["Disco Elysium", "What Remains of Edith Finch"],
+        "must_not_cite": [],
+        "must_cite_property": { "hltb_main_lte": 25 },
+        "dimensions": { "no_hallucination": true, "library_anchored": true, "solo_multi_diff": null, "honest_no_invention": null }
+      }
     }
   ]
 }

@@ -1,0 +1,584 @@
+{
+  "dataset": "golai-library-v2",
+  "run_at": "2026-05-14T21:30:26.872962+00:00",
+  "n_cases": 23,
+  "metrics": {
+    "hallucination_rate": 0.405,
+    "library_anchor_rate": 0.518,
+    "must_cite_pass_rate": 1.0,
+    "must_not_cite_pass_rate": 0.667,
+    "must_cite_property_rate": 1.0,
+    "min_word_count_pass_rate": 1.0,
+    "pertinence_mean": 4.565,
+    "expert_tone_mean": 5,
+    "completeness_mean": 5,
+    "studio_reputation_mean": 4.667,
+    "total_cost_usd": 0.479149
+  },
+  "items": [
+    {
+      "id": "weekend-short-owned",
+      "input": "J'ai deux soirs devant moi ce week-end, je lance quoi dans ma bibliothèque ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.5,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.5,
+        "pertinence": 4
+      },
+      "agent_output": "Tu as deux soirs devant toi et tu accroches clairement sur du contenu **court mais dense** (Action/Roguelite, tu as bosué 48h sur Hades et le notés 9/10).\n\nTes deux meilleures options ce week-end :\n\n**A Short Hike** (2019) — C'est de la chill pure, exploratoire, zéro stress. Idéal pour un soir en mode détente. Ça se boucle en 2-3h facilement, donc tu peux respirer avant de frapper plus dur le deuxième soir.\n\n**Persona 5 Royal** (2019) — C'est un engagement plus long (100h+), donc ce n'est PAS pour ce week-end. Réserve ça pour un moment où tu as du temps dégagé. C'est du contenu qui demande de la continuité narrative.\n\n**Mon conseil** : Lance **A Short Hike** vendredi soir (tu le termines facilement), puis samedi utilise ton deuxième soir pour autre chose — soit reprendre un roguelite punch si tu as besoin de ce frisson, soit continuer la détente. Persona 5 Royal, c'est pour une autre occasion.\n\nT'as envie de quelque chose de spécifique samedi soir, ou tu veux une suggestion qui colle à ton créneau action/roguelite ?",
+      "judge_reason": "La réponse est bien justifiée en proposant une option adaptée au temps de jeu court et au genre préféré, tout en expliquant pourquoi Persona 5 Royal n'est pas approprié.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11924,
+        "input_tokens": 11504,
+        "output_tokens": 420,
+        "cache_read_tokens": 5257,
+        "cache_write_tokens": 5603,
+        "estimated_cost_usd": 0.015786
+      }
+    },
+    {
+      "id": "coop-not-started",
+      "input": "Je cherche un jeu coop dans ce que je possède, pas trop prise de tête.",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.5,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.5,
+        "pertinence": 5
+      },
+      "agent_output": "Tu as trois jeux pertinents :\n\n**Portal 2** (2007) — Tu l'as déjà complété (18h, note 10/10). Puzzle coop accessible et très creusé. Si tu veux rejouer en coop, c'est le candidat idéal pour \"pas prise de tête\".\n\n**It Takes Two** (2021) — Tu l'as en \"not_started\". C'est exactement ce que tu cherches : aventure coop relaxante, design pensé pour être accessible et amusant à deux, sans difficulté punitive. Zéro prise de tête.\n\nVu ton profil coop + aventure + accessibilité, **It Takes Two** semble taillé sur mesure. Tu veux que je te propose de le passer en \"not_started\" → une session pour commencer ?",
+      "judge_reason": "La réponse de l'agent est précise et adaptée au profil, en recommandant des jeux coopératifs accessibles et en justifiant chaque choix.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11790,
+        "input_tokens": 11509,
+        "output_tokens": 281,
+        "cache_read_tokens": 5259,
+        "cache_write_tokens": 5603,
+        "estimated_cost_usd": 0.015234
+      }
+    },
+    {
+      "id": "completed-summary",
+      "input": "Quels sont les meilleurs jeux que j'ai déjà terminés ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": 1.0,
+        "library_anchor_rate": 1.0,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.0,
+        "pertinence": 5
+      },
+      "agent_output": "Tu as deux jeux terminés dans ta bibliothèque, et ils sont tous les deux clairement tes préférés :\n\n**Disco Elysium** — Note 10/10 (32 heures)\nUn RPG narratif révolutionnaire qui place la quête de l'histoire au cœur du gameplay. Ton score parfait parle de lui-même.\n\n**Elden Ring** — Note 9/10 (120 heures)\nUne expérience RPG d'action épique et approfondie qui a clairement marqué ton intérêt, avec ses 120 heures de jeu. C'est un titre qui justifie pleinement l'investissement temps.\n\nC'est un deux qui reflète tes affinités : histoire narrative profonde d'un côté (Disco Elysium), challenge d'action et exploration immense de l'autre (Elden Ring).",
+      "judge_reason": "La réponse identifie précisément les jeux terminés, les justifie en fonction des critères du profil et souligne leur pertinence par rapport aux genres et à l'importance de l'histoire.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11728,
+        "input_tokens": 11419,
+        "output_tokens": 309,
+        "cache_read_tokens": 5246,
+        "cache_write_tokens": 5585,
+        "estimated_cost_usd": 0.015259
+      }
+    },
+    {
+      "id": "do-not-overinfer-hours",
+      "input": "Vu mes heures de jeu, tu penses que j'aime surtout quel genre ?",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.5,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.5,
+        "pertinence": 5
+      },
+      "agent_output": "C'est clair : **MOBA**.\n\nTes 900 heures sur **Dota 2** représentent 97 % de ton temps de jeu total. C'est un engagement massif et sans équivalent dans ta bibliothèque.\n\nCela dit, il y a une nuance importante à noter : tu as noté Dota 2 avec un 4/10, alors que tu as donné 10/10 à **Outer Wilds** (puzzle-exploration) et **Celeste** (plateforme), des jeux auxquels tu as joué bien moins longtemps (20 et 12 heures). \n\nDonc en termes d'heures : **MOBA dominant**. Mais en termes de satisfaction réelle (selon tes notes) : tes jeux favoris sont plutôt des **expériences solo courtes et intenses** (puzzle, exploration, plateforme). \n\nLa grosse différence suggère que tu aimes les MOBA pour la gameplay et la profondeur compétitive, mais que tu apprécie vraiment davantage les jeux à faible friction narrative / puzzle-driven.",
+      "judge_reason": "La réponse est précise et bien justifiée, tenant compte des heures de jeu et des notes des jeux pour établir une analyse complète des préférences du joueur.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11853,
+        "input_tokens": 11500,
+        "output_tokens": 353,
+        "cache_read_tokens": 5254,
+        "cache_write_tokens": 5599,
+        "estimated_cost_usd": 0.015512
+      }
+    },
+    {
+      "id": "no-good-library-match",
+      "input": "Je veux un city builder chill dans ma bibliothèque.",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.0,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.0,
+        "pertinence": 5
+      },
+      "agent_output": "Voici les meilleurs city builders chill pour ta bibliothèque :\n\n**Townscaper** (2020) — C'est vraiment le choix parfait pour du relaxant. C'est plus un jouet créatif qu'un jeu : tu colores des blocs sur une grille irrégulière et l'algorithme les transforme automatiquement en maisons mignonnes, arches, escaliers. Zéro stress, zéro deadline. Steam 96 %.\n\n**Mini Metro** (2015) — Un city builder minimaliste et apaisant : tu dessines des lignes de métro pour relier des stations dans une ville qui grandit. Décisions stratégiques légères, esthétique très zen. IGDB 88 %, Steam 96 %.\n\n**Cities: Skylines** (2015) — Le grand classique moderne et accessible. Gère une ville complète avec transports, ressources, zones résidentielles. Plus profond que Townscaper mais sans la rigidité des anciens SimCity. Steam 93 % avec 216k avis (signal très fiable). Supporte les mods pour les chill players.\n\n**SimCity 4** (2003) — Le vieux classique incontournable si tu veux un vrai city builder. Profondeur classique du genre, construction au rythme que tu veux. IGDB 82 %.\n\nLequel te tente ? Je peux l'ajouter à ta biblio.",
+      "judge_reason": "La réponse propose plusieurs city builders adaptés au profil de l'utilisateur, en mettant l'accent sur la relaxation et en justifiant chaque choix avec des caractéristiques pertinentes.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 17318,
+        "input_tokens": 16864,
+        "output_tokens": 454,
+        "cache_read_tokens": 5254,
+        "cache_write_tokens": 5589,
+        "estimated_cost_usd": 0.020199
+      }
+    },
+    {
+      "id": "already-owned-similar",
+      "input": "J'ai adoré Hollow Knight, je lance quoi de similaire parmi mes jeux ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": 0.0,
+        "library_anchor_rate": 1.0,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.0,
+        "pertinence": 5
+      },
+      "agent_output": "Tu as **Ori and the Will of the Wisps** en attente dans ta bibliothèque — c'est justement un excellent choix similaire à Hollow Knight.\n\n**Ori and the Will of the Wisps** (2020) est un Metroidvania / Plateforme avec la même structure d'exploration progressive, des combats de boss exigeants, et une atmosphère visuelle captivante. Les méchaniques sont un peu plus orientées plateforme que Hollow Knight, mais le focus sur l'exploration et le défi y est tout aussi présent.\n\nC'est celui-ci que je te recommande de lancer en priorité parmi tes jeux actuels.",
+      "judge_reason": "La réponse est précise et adaptée au profil, justifiant pourquoi 'Ori and the Will of the Wisps' est un excellent choix similaire à 'Hollow Knight' en termes d'exploration et de challenge.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11738,
+        "input_tokens": 11499,
+        "output_tokens": 239,
+        "cache_read_tokens": 5252,
+        "cache_write_tokens": 5594,
+        "estimated_cost_usd": 0.015051
+      }
+    },
+    {
+      "id": "avoid-long-game-short-constraint",
+      "input": "Je veux finir quelque chose rapidement, lequel de mes jeux éviter et lequel choisir ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.4,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.6,
+        "pertinence": 5
+      },
+      "agent_output": "Tu as deux jeux en attente. Voici le diagnostic temps réel :\n\n**À éviter absolument :** **The Witcher 3** — c'est un RPG open world massif. Même les quêtes principales dépassent les 50-100 heures. Incompatible avec ton besoin de \"finir rapidement\".\n\n**À choisir :** **What Remains of Edith Finch** — c'est une expérience narrative courte et intimiste (environ 2-3 heures). Parfait pour ta contrainte de durée, et aligné sur tes genres favoris (narratif + exploration). Tu peux le terminer en une session.",
+      "judge_reason": "La réponse est précise et parfaitement adaptée au profil, en recommandant un jeu court et en évitant celui qui prendrait trop de temps.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11675,
+        "input_tokens": 11435,
+        "output_tokens": 240,
+        "cache_read_tokens": 5256,
+        "cache_write_tokens": 5602,
+        "estimated_cost_usd": 0.01501
+      }
+    },
+    {
+      "id": "backlog-priority",
+      "input": "Dans mon backlog, donne-moi une priorité logique pour les 3 prochains jeux.",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.2,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.8,
+        "pertinence": 2
+      },
+      "agent_output": "Ton backlog contient uniquement **Mass Effect Legendary Edition** en statut \"todo\". Tu n'as que ce jeu en attente de démarrage.\n\nAvant de te proposer une vraie priorité sur 3 jeux à lancer ensuite, j'aurais besoin de comprendre ton contexte immédiat :\n\n1. **Tu veux lancer Mass Effect maintenant ?** (4h jouées suggèrent que tu as déjà commencé — c'est une reprise ou un faux statut ?)\n2. **Tu envisages d'ajouter d'autres jeux au backlog** avant de décider de l'ordre ?\n3. **Ou tu cherches des suggestions** pour enrichir ton backlog et créer une queue de 3 jeux stratégiquement ordonnés ?\n\nDonne-moi le contexte et je te construirai une priorisation logique alignée sur tes préférences RPG/Puzzle et tes critères Histoire/Gameplay.",
+      "judge_reason": "La réponse de l'agent ne fournit pas de priorisation pour les jeux demandés et se concentre sur des questions de clarification, ce qui est partiel mais pas directement utile.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11700,
+        "input_tokens": 11368,
+        "output_tokens": 332,
+        "cache_read_tokens": 5250,
+        "cache_write_tokens": 5596,
+        "estimated_cost_usd": 0.015319
+      }
+    },
+    {
+      "id": "catalog-rag-general",
+      "input": "Je cherche un jeu récent avec une excellente réception joueur, tu me conseillerais quoi ?",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.167,
+        "pertinence": 4
+      },
+      "agent_output": "Basé sur ta préférence pour les jeux d'**Action et RPG** avec une bonne réception joueurs, voici mes meilleurs conseils parmi les résultats :\n\n**Elden Ring** (2022) — C'est le choix incontournable. Steam 93 % (814 632 avis), Metacritic 95 %. Un action-RPG en monde ouvert avec une difficulté engageante, exploration libre et boss iconiques. La communauté reste très active en 2026.\n\n**Cyberpunk 2077** (2020) — Steam 87 % (839 783 avis). Après les correctifs majeurs et l'expansion Phantom Liberty (2023), c'est devenu un RPG d'action solide avec une histoire captivante dans Night City. Excellent choix si tu cherches une expérience narrative immersive.\n\n**High on Life** (2022) — Steam 90 % (19 701 avis). Un shooter-action léger et humoristique, parfait si tu veux quelque chose de moins intense qu'Elden Ring mais toujours engageant.\n\n**Horizon Zero Dawn: Complete Edition** (2017) — Steam 88 % (95 308 avis), Metacritic 84. Action-RPG tiers qui mélange exploration, chasse tactique contre des créatures mécaniques et une belle narration. Dépaysement garanti.\n\n**It Takes Two** (2021) — Steam 96 % (210 860 avis), Metacritic 88. Bien que ce soit une aventure coop plutôt qu'un pur action-RPG, la réception joueurs est exceptionnelle et c'est un vrai défi pour le coop.\n\nQuel ton recherches-tu en priorité — une aventure narrative profonde, un défi de gameplay intense, ou du coop ?",
+      "judge_reason": "La réponse fournit plusieurs recommandations récentes et bien reçues, adaptées aux préférences de l'utilisateur en matière de genres et d'avis joueurs, bien que certains choix soient moins pertinents.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 37842,
+        "input_tokens": 37115,
+        "output_tokens": 727,
+        "cache_read_tokens": 10504,
+        "cache_write_tokens": 5944,
+        "estimated_cost_usd": 0.038196
+      }
+    },
+    {
+      "id": "status-aware-next-game",
+      "input": "J'ai abandonné certains jeux, évite-moi ce style et propose un meilleur choix dans ma bibliothèque.",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.5,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.5,
+        "pertinence": 5
+      },
+      "agent_output": "J'ai identifié les jeux abandonnés dans ta bibliothèque :\n\n**Jeux abandonnés :**\n- **Darkest Dungeon** (roguelite + stratégie, note 3/10) — tu as joué 7h avant d'arrêter.\n\n**Meilleur choix dans ta bibliothèque :**\n- **Firewatch** (2016) — tu l'as complété avec une note de 9/10. C'est un jeu narratif et exploratoire qui a clairement fonctionné pour toi. Basé sur tes retours, tu apprécies l'expérience narrative immersive et l'exploration tranquille plutôt que les boucles répétitives de roguelite.\n\n**À éviter :**\nLes jeux roguelite/stratégie très répétitifs et exigeant beaucoup de gestion mental (comme Darkest Dungeon) ne semblent pas ton truc. Reste plutôt sur des expériences narratives ou exploratoires.\n\nRemarque : tu as **Into the Breach** en attente (stratégie tactique) — ce jeu est très différent de Darkest Dungeon (moins roguelite, plus puzzle tactique), mais tu voudras peut-être le tester pour voir si la stratégie pure (sans la dimension répétitive du roguelite) te plaît davantage.",
+      "judge_reason": "La réponse est précise et adaptée au profil, en identifiant clairement les jeux abandonnés et en recommandant un titre qui correspond aux préférences de gameplay et d'expérience du joueur.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11932,
+        "input_tokens": 11513,
+        "output_tokens": 419,
+        "cache_read_tokens": 5251,
+        "cache_write_tokens": 5603,
+        "estimated_cost_usd": 0.015789
+      }
+    },
+    {
+      "id": "studio-naughty-dog",
+      "input": "Recommande-moi des jeux de Naughty Dog.",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.2,
+        "pertinence": 5
+      },
+      "agent_output": "Votre bibliothèque est actuellement vide. Mais compte tenu de votre profil — préférence pour les jeux longs d'action et aventure centrés sur l'histoire — les créations de Naughty Dog sont une excellente correspondance. Voici les titres majeurs :\n\n**Les incontournables (action-aventure narratif)**\n\n**The Last of Us** (2013) — Metacritic 95 %, Steam 84 % (61k avis). Récit post-apocalyptique d'une profondeur rare, mélange exploration, furtivité et combat. Environ 15h pour une première partie. C'est un classique absolu pour les amateurs d'histoire.\n\n**The Last of Us Part II** (2020) — Metacritic 93 %, Steam 91 % (30k avis). Suite directe, 24h en moyenne, avec des twists narratifs audacieux et des environnements explorables. Narrativement riche mais polarisant auprès des joueurs sur ses choix de design.\n\n**Uncharted 4: A Thief's End** (2016) — Metacritic 93 %, IGDB 91.9. Chasse aux trésors globe-trottante, environ 15h, avec une narration cinématique et des séquences d'action mémorables. Clôture satisfaisante de la saga Nathan Drake.\n\n**Uncharted 2: Among Thieves** (2009) — Metacritic 96 %, IGDB 92. Considéré par beaucoup comme l'apogée de la série. Recherche de la Cintamani Stone, environ 10h. L'équilibre parfait entre spectacle et gameplay.\n\n**Les autres bonnes options**\n\n**Uncharted: The Lost Legacy** (2017) — Metacritic 85 %, IGDB 84.5. Spin-off autonome mettant en avant Chloe Frazer. Environ 7h, moins massif mais tout aussi polisé.\n\n**The Last of Us Part I** (2022) — Steam 84 % (61k avis). Remake du premier titre pour PS5 avec une refonte gameplay modernisée et une meilleure exploration.\n\n**Jak II** (2003) — Metacritic 87 %, IGDB 85. Monde ouvert, plateforme et tir tiers-personne. Environ 16h. Moins narratif que les deux précédentes franchises mais très solide en gameplay.\n\nVu votre attirance pour les jeux longs avec histoire riche, je recommande de commencer par **The Last of Us** ou **Uncharted 2** selon que vous préférez une tonalité sombre et intime ou une aventure spectaculaire.",
+      "judge_reason": "La réponse est précise et adaptée au profil, en recommandant des jeux de Naughty Dog qui correspondent parfaitement aux préférences de l'utilisateur en matière de durée, de genre et d'importance de l'histoire.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 33476,
+        "input_tokens": 32624,
+        "output_tokens": 852,
+        "cache_read_tokens": 5249,
+        "cache_write_tokens": 5585,
+        "estimated_cost_usd": 0.034395
+      }
+    },
+    {
+      "id": "release-year-2024",
+      "input": "Quels bons jeux sont sortis en 2024 ?",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.25,
+        "pertinence": 4
+      },
+      "agent_output": "Excellent, j'ai des résultats pertinents. Voici les bons jeux sortis en 2024 :\n\n**Black Myth: Wukong** (2024)\nUn action-RPG basé sur la mythologie chinoise et le roman \"Le Voyage vers l'Ouest\". Steam 96 %, plus de 870 000 avis — c'est un phénomène. Combat rapide et gratifiant, direction artistique remarquable, IGDB 88 %.\n\n**Elden Ring: Shadow of the Erdtree** (2024)\nL'expansion majeure d'Elden Ring sortie en juin. Ajoute une nouvelle région (Land of Shadow) avec 70 armes, 39 talismans et une trentaine d'armures. IGDB 91 %. À noter : les avis joueurs (Steam 71 %) reflètent une difficulté accrue et moins d'accès au contenu pour les néophytes — c'est une extension pour vétérans.\n\n**Nobody Wants to Die** (2024)\nUn thriller noir en first-person dans New York 2329. Detective enquêtant sur un serial killer. Steam 84 % sur 5 173 avis, style narratif forte (inspiré du cyberpunk et du polar). Durée : ~5-6h.\n\nCes trois-là sont les principaux titres 2024 de qualité que j'ai pu identifier dans le catalogue. L'année 2024 a été marquée par les suites/expansions majeures plus que par les nouvelles franchises.",
+      "judge_reason": "La réponse fournit des recommandations de jeux pertinents sortis en 2024, en lien avec les genres préférés de l'utilisateur, mais manque d'une analyse plus approfondie sur la nouveauté des titres.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 38283,
+        "input_tokens": 37568,
+        "output_tokens": 715,
+        "cache_read_tokens": 10502,
+        "cache_write_tokens": 5923,
+        "estimated_cost_usd": 0.038493
+      }
+    },
+    {
+      "id": "solo-mythologie-grecque",
+      "input": "Je veux un jeu solo sur la mythologie grecque.",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.0,
+        "pertinence": 5
+      },
+      "agent_output": "Voici les meilleurs jeux solo sur la mythologie grecque :\n\n**Assassin's Creed Odyssey** (2018) — RPG d'action avec une durée généreuse (40+ heures). Tu incarnes un mercenaire dans la Grèce antique pendant la guerre du Péloponnèse, avec exploration massive, quêtes variées et choix narratifs. Steam 89 %, Metacritic 85 %. Durée idéale pour ton profil medium, avec beaucoup d'exploration.\n\n**God of War** (2005) — Hack-and-slash brutal et viscéral centré sur Kratos, un guerrier Spartiate cherchant à éliminer Ares. Métacritic 94 %, IGDB 88. Classique absolu, action intense avec histoire mythologique riche.\n\n**God of War III** (2010) — Suite directe avec Kratos affrontant les dieux de l'Olympe. Métacritic 92 %, IGDB 91. Gameplay raffiné et boss spectaculaires.\n\n**Titan Quest** (2006) — Action-RPG avec gameplay similaire aux Diablo, traversant les paysages mythologiques grecs. Environ 25 heures de jeu. IGDB 79, Métacritic 69, mais offre beaucoup d'exploration.\n\n**Apotheon** (2015) — Action-RPG indie 2D plus léger (environ 8 heures). Tu escalades le Mont Olympe pour affronter les dieux. Steam 90 % avec 3 278 avis, très apprécié pour son style artistique unique inspiré de la céramique grecque.\n\n**Immortals Fenyx Rising** (2020) — Action-aventure puzzle inspiré par les créateurs d'Assassin's Creed Odyssey. Environ 25 heures. Style plus fantastique que réaliste, avec énigmes et combats légers. Steam 73 %, Métacritic 78.\n\nLequel t'intéresse ?",
+      "judge_reason": "La réponse fournit une liste pertinente de jeux solo sur la mythologie grecque, adaptée au profil de l'utilisateur, en tenant compte de la durée de jeu et des critères d'histoire et d'exploration.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 18684,
+        "input_tokens": 18065,
+        "output_tokens": 619,
+        "cache_read_tokens": 5252,
+        "cache_write_tokens": 5586,
+        "estimated_cost_usd": 0.021817
+      }
+    },
+    {
+      "id": "multi-guerre",
+      "input": "Je cherche un jeu multijoueur sur la guerre, le plus récent possible.",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.0,
+        "pertinence": 4
+      },
+      "agent_output": "Le jeu le plus récent du catalogue est **Marvel Rivals** (2024-12-06), mais ce n'est pas vraiment un jeu de guerre — c'est un shooter PvP héroïque centré sur l'univers Marvel.\n\nEn termes de shooters multijoueur militaires/guerriers récents, tu as :\n\n**Call of Duty: Modern Warfare II** (2022) — Shooter multijoueur compétitif basé sur des opérateurs militaires modernes. Steam 38 % : les avis révèlent une base engagée malgré des reproches sur l'équilibre des armes et la répartition des contenus. C'est la suite directe du Modern Warfare 2019.\n\n**Call of Duty: Modern Warfare** (2019) — FPS multijoueur compétitif avec plusieurs modes (équipe, capture, contrôle territorial). Steam 79 % avec 38 397 avis, Metacritic 80 % : un titre bien établi, plus stable que MW2 pour les retours joueurs. Les seasons de contenu ont continué pendant plusieurs années.\n\nAucun n'est sorti en 2024-2025 directement dans la catégorie FPS militaire pur. **Marvel Rivals** (2024) est le plus récent du catalogue, mais sort de ton cadre (PvE coop vs PvP compétitif, thème super-héroïque vs guerre).\n\nTu cherches FPS militaire moderne spécifiquement, ou tu serais intéressé par **Marvel Rivals** si le mode coop-multijoueur t'intéresse ? Ou tu préfères un jeu vraiment de 2024-2025 même s'il sort du thème guerrier ?",
+      "judge_reason": "La réponse fournit des recommandations pertinentes de jeux multijoueurs récents dans le genre de la guerre, tout en justifiant le choix avec des détails sur les jeux mentionnés.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 20204,
+        "input_tokens": 19662,
+        "output_tokens": 542,
+        "cache_read_tokens": 5254,
+        "cache_write_tokens": 5594,
+        "estimated_cost_usd": 0.022793
+      }
+    },
+    {
+      "id": "expert-tone-soulslike",
+      "input": "Qu'est-ce qui rend Dark Souls si spécial par rapport aux autres Action-RPG ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.923,
+        "pertinence": 5,
+        "expert_tone": 5
+      },
+      "agent_output": "Je ne vais pas te lancer une recherche — tu me poses une question analytique sur le design d'un jeu spécifique, pas une demande de recommandation. Je vais te répondre directement.\n\n**Dark Souls** (2011) s'est imposé comme référence en Action-RPG pour plusieurs raisons qui ont transformé le genre :\n\n**Le combat comme langage**\nDark Souls a rendu chaque affrontement *lisible*. Les animations d'attaque sont longues, prévisibles, exploitables — ça force une danse tactique entre agression et défense. Aucun bouton \"parry automatique\" ou système d'esquive sans conséquence. Tu dois *apprendre* les patterns, et cette friction est intentionnelle. C'est l'inverse des Action-RPG antérieurs (Kingdom Hearts, Devil May Cry) où l'agilité prime sur la lecture.\n\n**La mort comme mécanique, pas punition**\nMourir te rend accessible — tu drops tes souls (devise de progression) à ta position, et tu as une chance de les récupérer. C'est pas \"game over\", c'est une boucle : progression → prise de risque → chute → rédemption. Ça crée une tension émotionnelle sans frustration absurde.\n\n**Level design interconnecté**\nLes mondes s'enroulent sur eux-mêmes — tu découvres des raccourcis, tu reviens en arrière par d'autres chemins. C'est un contraste brutal avec les Action-RPG linéaires de l'époque. Cette architecture crée de l'**exploration viscérale**, pas des menus de fast-travel.\n\n**Minimalisme narratif**\nL'histoire est fragmentée, cachée dans les dialogues allusifs et les descriptions d'objets. Tu dois la *construire* activement. Zéro cinématique obligatoire. Le monde raconte, il n'explique pas — ce qui renforce l'immersion et le respect du joueur.\n\n**Community & invasions**\nLe multijoueur asynchrone (phantômes, invasions PvP, messages) tisse une toile sociale sans briser le single-player. Aucun lobby, aucune file d'attente — tu joues et soudain tu croises un fantôme ou un envahisseur. C'est organique.\n\n**Impact durable**\nDark Souls a normalisé le terme **\"souls-like\"** lui-même — un genre nouveau où le challenge n'est pas punition mais dialogue entre le design et le joueur. Tout Action-RPG moderne (Elden Ring, Bloodborne, Sekiro, même Monster Hunter World) porte ses ADN.\n\nC'est pas seulement un bon jeu — c'est un **changement de paradigme** sur ce qu'un Action-RPG peut oser : exiger du joueur, le respecter, et le récompenser pour chaque victoire tactique.",
+      "judge_reason": "La réponse analyse en profondeur les éléments qui rendent Dark Souls unique, tout en utilisant un vocabulaire technique et des références précises au genre.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 6324,
+        "input_tokens": 5606,
+        "output_tokens": 718,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 5258,
+        "estimated_cost_usd": 0.011563
+      }
+    },
+    {
+      "id": "expert-tone-genre-def",
+      "input": "C'est quoi exactement la différence entre un Metroidvania et un Roguelite ?",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.667,
+        "pertinence": 5,
+        "expert_tone": 5
+      },
+      "agent_output": "**Metroidvania** et **Roguelite** sont deux structures de jeu très différentes, souvent confondues parce que certains jeux modernes les mélangent.\n\n**Metroidvania** — c'est une architecture de monde et de progression :\n- Le jeu se joue dans un **monde interconnecté et persistant**. Tu explores une map unique, toujours la même, et tu reviens aux mêmes endroits.\n- Tu débloques l'accès à de nouvelles zones en **gagnant des capacités** (un double-saut, un crochet, une arme spéciale). C'est la clé de la progression.\n- **Une seule run** : tu joues d'un bout à l'autre du jeu dans une session continue (ou sauvegardée). Si tu meurs, tu continues depuis ton dernier point de sauvegarde.\n- L'expérience s'appelle \"Metroidvania\" parce que **Metroid** (1986) et **Castlevania: Symphony of the Night** (1997) ont codifié ce pattern.\n- Exemples : Hollow Knight, Ori and the Blind Forest, Dead Cells (enfin, quasi—voir point ci-dessous).\n\n**Roguelite** — c'est une mécanique de progression et de runs :\n- Tu fais des **runs courtes et répétées**. Chaque run est une tentative indépendante.\n- Quand tu **meurs, tu recommences de zéro** ou presque — mais tu gardes une **progression méta** (technologies débloquées, armes permanentes, améliorations du personnage).\n- Le hasard est central : chaque run génère du **contenu différent** (niveaux aléatoires, trésors aléatoires, ennemis variables). Tu ne sais jamais à quoi t'attendre.\n- L'objectif : chaque tentative te rend plus fort ou mieux équipé pour la suivante.\n- Exemples : Hades, The Binding of Isaac, Risk of Rain 2.\n\n**La nuance clé : Dead Cells** (2018) est un excellent exemple de **fusion** :\n- C'est un Metroidvania structuré (monde interconnecté, capacités de déblocage qui ouvrent de nouveaux chemins).\n- Mais chaque run tu meurs et recommences, et chaque run génère des ennemis/trésors légèrement différents (roguelite).\n- C'est un \"Roguevania\" — ça brouille volontairement les frontières.\n\n**En résumé** :\n- **Metroidvania** = un seul monde persistant, déblocage par capacités, progression linéaire dans UNE partie.\n- **Roguelite** = des runs répétées, progression méta sur plusieurs tentatives, hasard à chaque run.\n\nC'est deux paradigmes différents. Un jeu peut être l'un, l'autre, ou les deux.",
+      "judge_reason": "La réponse explique clairement les différences entre Metroidvania et Roguelite avec des exemples pertinents et une analyse approfondie, tout en utilisant un vocabulaire technique approprié.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 6326,
+        "input_tokens": 5596,
+        "output_tokens": 730,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 5250,
+        "estimated_cost_usd": 0.011597
+      }
+    },
+    {
+      "id": "completeness-mass-effect",
+      "input": "Que penses-tu de la trilogie Mass Effect, du premier au troisième ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": 1.0,
+        "hallucination_rate": 0.5,
+        "pertinence": 5,
+        "expert_tone": 5,
+        "completeness": 5
+      },
+      "agent_output": "Ta bibliothèque est vide, je ne peux donc pas baser mon analyse sur tes retours personnels. Voici mon évaluation terrain de la trilogie originale, fondée sur 15 ans d'évolution critique et communautaire.\n\n**Mass Effect (2007)** — Le fondateur. Metacritic 84 %, une fondation solide mais maladroite. Le jeu invente le template : dialogue branché, univers sci-fi riche (l'Effet de masse, la Citadelle, les Moissonneurs en filigrane), compagnons charismatiques (Garrus, Tali, Liara). Les combats tour-à-tour maladroits et l'écriture brute du dialogue n'ont pas vieilli, mais la narration globale et la cinématique (le Conseil galactique ignorant la menace) marquent les débuts du charisme de BioWare.\n\n**Mass Effect 2 (2010)** — L'apogée consensus. Metacritic 94 %, Steam reviews largement positif. C'est l'opus où la narration s'affine, où les compagnons deviennent mémorables (Mordin, Thane, Jack, Miranda), où la campagne suicide remet le risque permanent en jeu. Les choix se cristallisent : loyal ou trahison, actes commis par omission. Le combat se raffine. BioWare a trouvé l'équilibre entre cinéma et agentivité du joueur.\n\n**Mass Effect 3 (2012)** — Polarisé. Metacritic 89 %, mais divisé à la critique. Steam stable (env. 85 % positif avec les DLC Citadelle + Extended Cut). La fin originale (synthèse Reapers / contrôle / destruction) concentrée en 10 minutes a choqué : après 100+ heures d'investissement narratif, les trois finales semblaient identiques et écrites sans tenir compte des 300+ choix accumulés. L'Extended Cut (DLC gratuit post-lancement) a partiellement corrigé le tir en étoffant les variantes de fin. La campagne elle-même reste forte (Thessia, Rannoch, la Moisson), mais cette fin demeure une cicatrice.\n\n**Bilan trilogie :**\n\nLa force : univers sci-fi impeccable, galaxie cohérente, compagnons attachants, système narratif de choix influents (surtout ME2). Les générations de joueurs ont construit 150+ heures dessus.\n\nLa faiblesse critique : l'ambitieux « fin définitive » de ME3 n'a pas livré. BioWare avait promis que les choix précédents influeraient la fin ; la réalité était trois arbres de fin très similaires. C'est devenu un cas d'école du \"narrative dissonance\" — la confiance s'est fracturée.\n\n**Contexte :** Aujourd'hui, la trilogie reste recommandable pour quiconque cherche de la sci-fi narratif long-terme avec compagnons. Mais elle demande de l'indulgence sur ME3 (joue avec l'Extended Cut obligatoire, ignore les débats de synthèse).\n\nQu'en est-il pour toi — tu envisages de les jouer, ou tu as une question plus spécifique sur l'un des trois ?",
+      "judge_reason": "La réponse est détaillée, bien structurée et aborde chaque opus de la trilogie avec des analyses précises, tout en tenant compte des critères importants du profil.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 12212,
+        "input_tokens": 11295,
+        "output_tokens": 917,
+        "cache_read_tokens": 5253,
+        "cache_write_tokens": 5594,
+        "estimated_cost_usd": 0.017599
+      }
+    },
+    {
+      "id": "studio-ubisoft",
+      "input": "Ubisoft ça vaut encore le coup ? Leurs jeux sont comment en ce moment ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": 1.0,
+        "hallucination_rate": 0.76,
+        "pertinence": 5,
+        "expert_tone": 5,
+        "completeness": 5,
+        "studio_reputation": 5
+      },
+      "agent_output": "Ta bibliothèque est vide pour l'instant, donc je vais te donner une vue d'ensemble honnête sur Ubisoft en 2024-2025 basée sur ce que j'ai trouvé :\n\n**Le vrai portrait**\n\nUbisoft reste dans une position **inconfortable**. Ils publient encore des jeux qui bougent pas mal de copies, mais la franchise reine—**Assassin's Creed**—montre des fissures.\n\n**Les dernières sorties Ubisoft :**\n\n**Assassin's Creed Shadows** (2025) - Le nouveau flagship qui vient de sortir en mars. C'est du lourd techniquement (beau, ouvert, ambitieux), mais Steam 76 % sur ~32k avis, c'est **solide sans être enthousiasmant**. Les retours pointent un gameplay AC traditionnel, efficace mais prévisible. L'histoire du Japon féodal plaît, sauf que ça ressemble à \"les mêmes formules dans une autre époque\". Pour quelqu'un comme toi (Action + Aventure + Histoire + Gameplay bon), c'est **jouable**, mais pas révolutionnaire.\n\n**Star Wars Outlaws** (2024) - Ubisoft Montreal, approche \"open world cinéma\". Steam 72 % (~10k avis) = **honnête mais pas transcendant**. Le concept (première vraie approche SW en open-world) valait le coup théoriquement, mais l'exécution s'est avérée gadget-lourd et moins captivante que prévu. Si tu as des attentes moyennes-hautes, tu peux être déçu.\n\n**Avatar: Frontiers of Pandora** (2023) - Massive Entertainment. Visuellement fou, mais narrativement faible. Steam 77 % (~13k avis). Ça vaut surtout pour l'immersion graphique et l'exploration, pas pour l'histoire.\n\n**Mirage** (2023) - Le \"retour aux sources\" promis en stealth. Steam 76 % (~11k avis). Le problème : ils ont juré que ce serait un vrai pivot vers du stealth pur et du gameplay serré. Résultat : c'est un bon AC classique, point. Les fans attendaient mieux, les nouveaux joueurs trouvent ça correct mais sans âme.\n\n**Le vraiment dérangeant :**\n\n- **XDefiant** (2024) - FPS gratuit, Steam 63 %, jeu de niche limité. Ubisoft a essayé de forcer un Valorant-killer. Ça flop.\n- **Formule gelée** : Tous les AC récents tournent en boucle sur le même *gameplay loop* (loot RPG + stealth + parkour + quêtes de faction). Aucun risque pris depuis **Origins** (2017).\n- **Problèmes de production** : Les jeux sortent lourd techniquement (bugs, performance) et sont bourrés de monitisation (battle pass, cosmétiques).\n\n**Franchement ça vaut le coup ?**\n\nÇa dépend de ce que tu cherches :\n\n- **Si tu veux de l'action-aventure solo bien ficelée avec histoire solide** : Oui, mais cherche ailleurs en priorité. **Shadows** ou **Mirage** te donneront du bon travail artisanal Ubisoft, pas du révolutionnaire.\n- **Si tu es fan d'AC depuis les débuts** : Attends les avis détaillés. Shadows a l'air correct, mais pas un must-have si tu maîtrises la formule.\n- **Si tu cherches une prise de risque** : Non. Ubisoft joue la sécurité depuis 4-5 ans.\n\n**Conseil blunt** : Les jeux Ubisoft de maintenant sont des 7-7.5/10 fiables, pas des 8-9 mémorables. Avec tes préférences (Histoire + Gameplay + Action), tu aurais plus d'impact à checker des studios qui innovent (FromSoftware, Remedy, Obsidian, même CD Projekt Red).\n\nT'as un jeu spécifique Ubisoft qui te tente, ou tu scouts en général ?",
+      "judge_reason": "La réponse fournit une analyse détaillée et nuancée des jeux récents d'Ubisoft, en tenant compte des préférences du profil et en mentionnant les forces et faiblesses des titres et du studio.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 32533,
+        "input_tokens": 31265,
+        "output_tokens": 1268,
+        "cache_read_tokens": 5252,
+        "cache_write_tokens": 5594,
+        "estimated_cost_usd": 0.034979
+      }
+    },
+    {
+      "id": "studio-fromsoftware",
+      "input": "Pourquoi FromSoftware est aussi respecté dans le monde du jeu vidéo ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 1.0,
+        "pertinence": 5,
+        "expert_tone": 5,
+        "studio_reputation": 5
+      },
+      "agent_output": "Tu poses une question sur l'industrie et la trajectoire d'un studio, pas sur ton profil de joueur ou ta bibliothèque. Je vais répondre directement sans appeler d'outils.\n\n**FromSoftware mérite ce respect pour plusieurs raisons solides :**\n\n**Maîtrise du game design**\nLe studio a imposé une philosophie de gameplay singulière : des jeux difficiles mais justes, où chaque mort est une opportunité d'apprentissage. Pas de difficulté \"cheap\", pas de QTE cheap — du pur design mécanique. Cela s'est cristallisé avec Dark Souls (2011) et perfectionné à chaque itération. C'est un contraste brutal avec le trend industry des 15-20 dernières années : tutoriels infinis, assistance de jeu, cinéma remplaçant le gameplay.\n\n**Impact culturel majeur**\nDark Souls (2011) a créé un genre entier — les \"souls-like\". Des centaines de jeux s'en inspirent depuis. C'est rare qu'un studio définisse un langage de design aussi influent. Elden Ring (2022) a fait la même chose avec la formule open-world, en vendant 20+ millions de copies.\n\n**Cohérence créative**\nContrairement aux studios AAA qui pivotent selon les tendances commerciales, FromSoftware maintient une identité visuelle, narrative et ludique très clairement reconnaissable. Que ce soit Armored Core, Bloodborne ou Elden Ring, tu reconnais \"la main\" du studio.\n\n**Respect des joueurs**\nIls ne demandent pas d'engagement live-service, pas de cosmétiques agressifs, pas de FOMO. Les jeux sont complets à la sortie. C'est une rareté dans le AAA contemporain.\n\n**Scores et reconnaissance critiques**\nElden Ring : Metacritic 96 %, OpenCritic 96 %, plus de 300 000 avis Steam à 96 %. Dark Souls Remastered : Metacritic 85 %. Bloodborne : Metacritic 92 %. Ces chiffres traduisent une consécration critique ET joueur rare.\n\nLe respect de FromSoftware n'est pas une opinion d'experts — c'est l'agrégation de millions de joueurs qui reviennent, qui recommandent, et qui demandent \"quand le prochain ?\"",
+      "judge_reason": "La réponse est précise, bien justifiée et démontre une connaissance approfondie des forces et faiblesses de FromSoftware.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 6193,
+        "input_tokens": 5595,
+        "output_tokens": 598,
+        "cache_read_tokens": 0,
+        "cache_write_tokens": 5250,
+        "estimated_cost_usd": 0.011068
+      }
+    },
+    {
+      "id": "license-assassins-creed",
+      "input": "La licence Assassin's Creed vaut encore le coup ? C'était mieux avant ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": 1.0,
+        "hallucination_rate": 0.625,
+        "pertinence": 5,
+        "expert_tone": 5,
+        "completeness": 5,
+        "studio_reputation": 4
+      },
+      "agent_output": "Ta bibliothèque est vide, donc je vais analyser la franchise de façon neutre en fonction de ce que dit le marché.\n\n**Verdict honnête : oui et non — dépend de ce que tu attends.**\n\n**L'âge d'or (2007-2013)**\n\nLa franchise a commencé forte. **Assassin's Creed II** (2009) reste une référence — Steam 89 %, IGDB 88 — avec une construction narrative serrée et un rythme de jeu addictif. Les trois opus Ezio (**Brotherhood** et **Revelations** aussi à 84-88 %) incarnaient la formule à son apogée : missions ciblées, progression claire, stealth récompensé.\n\n**Black Flag** (2013) a prolongé l'élan — Steam 88 %, IGDB 84 — en changeant complètement de skin (pirate au lieu d'assassin) sans dénaturer le gameplay. C'est la dernière grande expérimentation réussie.\n\n**Le virage RPG (2017-2020)**\n\nPuis la franchise a basculé. **Origins** (2017), **Odyssey** (2018) et **Valhalla** (2020) adoptent un modèle RPG lourd : progressions chiffrées, tons épiques gonflés, mondes énormes mais moins denses. Les scores ne s'effondrent pas (Origins 86 %, Odyssey 89 % sur Steam) mais ils révèlent une fragmentation : les fans historiques trouvent ça creux, la base RPG massive l'adore.\n\n**Aujourd'hui**\n\n**Mirage** (2023) a cherché à revenir aux sources — plus compact, stealth prioritaire, durée 16h au lieu de 60+. Résultat mitigé : Steam 76 %, IGDB 75. Honnête mais pas révolutionnaire.\n\n**Shadows** (2025) arrive dans 2 mois avec un concept intrigant (deux protagonistes, Japon féodal). Steam 76 % sur 31 000 avis — le signalement est solide vu que c'est du très frais. IGDB 78 % promet une qualité correcte.\n\n**Ton contexte (Action, Aventure, Open World, histoire)** correspondt bien à Origins/Odyssey. Odyssey surtout vaut le coup si tu cherches 40-50 heures d'immersion grecque pure (même si c'est éloigné du stealth originel). **Mirage** serait plus proche de l'AC classique si tu veux du léger.\n\n**C'était mieux avant ?** Techniquement non (les jeux 2025 tournent mieux). Conceptuellement, oui — la concision et la clarté narrative des premiers épisodes (II-Black Flag) manquent. Mais \"mieux\" c'est subjectif selon ton goût : épopée RPG vs assassinat chirurgical.",
+      "judge_reason": "La réponse est détaillée, bien structurée et aborde les forces et faiblesses de la franchise tout en s'adaptant au profil de l'utilisateur.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 23368,
+        "input_tokens": 22450,
+        "output_tokens": 918,
+        "cache_read_tokens": 5255,
+        "cache_write_tokens": 5597,
+        "estimated_cost_usd": 0.02653
+      }
+    },
+    {
+      "id": "catalog-search-before-clarify",
+      "input": "Je cherche quelque chose de bien noté sur Steam sorti récemment, peu importe le genre.",
+      "scores": {
+        "must_cite_one_of": null,
+        "must_not_cite": null,
+        "library_anchor_rate": null,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.125,
+        "pertinence": 2
+      },
+      "agent_output": "Voici les jeux les mieux notés sur Steam des sorties récentes (et classiques reconnus comme excellents) :\n\n**Inside** (2016) — Steam 97 %, 67 842 avis. Puzzle-platformer atmosphérique magnifiquement réalisé, environ 3-4h de jeu. C'est un classique pour une raison — environnement oppressant, environnement riche en détails, énigmes mémorables.\n\n**Celeste** (2018) — Steam 97 %, 125 415 avis. Platformer exigeant avec un narratif personnel touchant. Court (~8h) mais dense, avec des défiés accessibles et des optionnels pour les hardcore.\n\n**Stray** (2022) — Steam 97 %, 151 419 avis. Aventure cyberpunk où tu incarnes un chat. Atmosphère dystopique, exploration, énigmes, ~5h. Graphiquement élégant, histoire attachante.\n\n**The Elder Scrolls V: Skyrim - Special Edition** (2016) — Steam 95 %, 209 748 avis. Un classique intemporel, RPG open-world sans limite de durée (26h de main story, 100h+ pour l'exploration complète).\n\n**Gorogoa** (2017) — Steam 97 %, 18 459 avis. Puzzle minimaliste en point-and-click, très court (~2h) mais une expérience unique et profondément créative.\n\n**Creaks** (2020) — Steam 95 %, 4 967 avis. Puzzle-aventure d'Amanita Design. Atmosphère singulière, beaux dessins, ~6h.\n\n**Superliminal** (2019) — Steam 95 %, 27 366 avis. Puzzle de perspective et illusions optiques, ~2.5h. Concept intrigant, narration intéressante.\n\nLes trois meilleurs candidats si tu veux juste un bon jeu bien noté, peu importe le genre : **Celeste** (platformer/histoire personnelle), **Stray** (aventure atmosphérique) ou **Skyrim** (RPG massif). Qu'est-ce qui t'appelle davantage — un défi mécanique, une ambiance immersive, ou une longue exploration ?",
+      "judge_reason": "La réponse mentionne des jeux bien notés, mais ne respecte pas la contrainte de récence et ne répond pas directement à la demande de jeux sortis récemment.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 33996,
+        "input_tokens": 33164,
+        "output_tokens": 832,
+        "cache_read_tokens": 10510,
+        "cache_write_tokens": 5943,
+        "estimated_cost_usd": 0.035454
+      }
+    },
+    {
+      "id": "must-not-cite-in-exclusion",
+      "input": "J'ai adoré Elden Ring, qu'est-ce que tu me conseilles dans ma bibliothèque qui s'en rapproche ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": 1.0,
+        "library_anchor_rate": 0.5,
+        "must_cite_property": null,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.5,
+        "pertinence": 5
+      },
+      "agent_output": "Parfait ! Tu as deux candidats directs dans ta bibliothèque :\n\n**Lies of P** (2023) — C'est le plus évident. C'est un Soulslike pur-jus avec la même DNA de combat et exploration que rien ne t'empêche de poursuivre. Tu l'as marqué en \"not_started\" : c'est ton prochain port d'attache pour cet univers.\n\n**Remnant II** (2023) — C'est un Action-RPG shooter-coopératif, donc moins typiquement Soulslike, mais il offre la même progression par défis challengers et l'exploration de mondes entrelacés. Si tu cherches à varier les mécaniques tout en gardant cet ADN de challenge et d'exploration, c'est celui-là. En \"todo\" aussi, donc parfait pour la suite.\n\nMon conseil ? Commence par **Lies of P** si tu veux rester dans la zone de confort des Soulslike (parry-blocking, pacing de combat serré). Puis **Remnant II** pour changer de rythme sans perdre la sensation de défi et d'exploration.",
+      "judge_reason": "La réponse est précise et adaptée au profil, en recommandant des jeux qui correspondent aux genres et critères d'exploration et de challenge, tout en tenant compte de l'état des jeux dans la bibliothèque.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11982,
+        "input_tokens": 11576,
+        "output_tokens": 406,
+        "cache_read_tokens": 5260,
+        "cache_write_tokens": 5614,
+        "estimated_cost_usd": 0.015797
+      }
+    },
+    {
+      "id": "cot-multi-criteria",
+      "input": "J'aime les RPG avec une histoire forte, mais j'ai peu de temps en ce moment. Qu'est-ce que je devrais lancer dans ce que j'ai ?",
+      "scores": {
+        "must_cite_one_of": 1.0,
+        "must_not_cite": null,
+        "library_anchor_rate": 0.6,
+        "must_cite_property": 1.0,
+        "min_word_count_ok": null,
+        "hallucination_rate": 0.2,
+        "pertinence": 5
+      },
+      "agent_output": "Tu as trois pépites qui correspondent exactement à ce que tu cherches :\n\n**Disco Elysium** est ton meilleur choix immédiat. C'est un RPG narratif qui te plonge dans une enquête de détective avec une histoire étouffante et des personnages mémorables. Même si tu n'as que peu de temps, les sessions peuvent se segmenter facilement. L'histoire en elle-même justifie chaque minute investie.\n\n**What Remains of Edith Finch** est parfait si tu cherches quelque chose d'encore plus court — une expérience narrative dense en 2-3 heures. C'est une exploration contemplative de la mort et de la famille. Le concept de \"jeu court avec histoire forte\" est appliqué à la perfection ici.\n\n**Baldur's Gate 3** tu l'as déjà commencé (5h), mais c'est un investissement long. À réserver pour quand tu auras plus de temps en continu — ce n'est pas idéal pour des sessions éparses.\n\nPour ta situation actuelle (temps limité + besoin de narration), je te suggère de **commencer par Disco Elysium** — c'est conçu pour absorber complètement, même en petites doses entre tes obligations.",
+      "judge_reason": "La réponse est précise et adaptée au profil, en recommandant des jeux qui correspondent aux critères de temps et d'histoire forte.",
+      "model": "anthropic/claude-haiku-4-5-20251001",
+      "usage": {
+        "total_tokens": 11934,
+        "input_tokens": 11544,
+        "output_tokens": 390,
+        "cache_read_tokens": 5254,
+        "cache_write_tokens": 5617,
+        "estimated_cost_usd": 0.015709
+      }
+    }
+  ]
+}

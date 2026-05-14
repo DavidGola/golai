@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-m3"
     litellm_model: str = "anthropic/claude-sonnet-4-5"
     chat_history_window: int = 20
-    rag_top_k: int = 12
+    rag_top_k: int = 8
     backend_cors_origins: str = "http://localhost:5173"
     allow_anonymous_chat: bool = True
     chat_rate_limit_enabled: bool = True
