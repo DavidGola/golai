@@ -6,7 +6,7 @@
 
 GolAi est un agent IA qui recommande quoi jouer ensuite à partir d'une bibliothèque de jeux, d'une conversation et de signaux de préférence utilisateur. Le projet met l'accent sur un backend Python propre, un RAG explicable, une UX de chat directe et une stack observable en production.
 
-[Demo live](https://golai.app) · [A propos](https://golai.app/about) · [Repo](https://github.com/DavidGola/golai) · [Contact](mailto:golaichat@outlook.com)
+[Démo live](https://golai.vps.webdock.cloud/) · [À propos](https://golai.vps.webdock.cloud/about) · [Repo](https://github.com/DavidGola/golai) · [Contact](mailto:golaichat@outlook.com)
 
 ![Aperçu GolAi](frontend/public/og-image.png)
 
