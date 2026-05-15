@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/useAuth'
 import { LIBRARY_RECOMMEND_PROMPT } from '@/lib/chatIntents'
 import type { ChatIntent } from '@/lib/chatIntents'
 import SidebarLeft from '@/components/layout/SidebarLeft'
+import Footer from '@/components/layout/Footer'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ChatInput from '@/components/chat/ChatInput'
 import LibraryPanel from '@/components/library/LibraryPanel'
@@ -244,9 +245,8 @@ function AnonInput() {
           {' '}ou{' '}
           <Link to="/register" style={{ color: '#5B7EFF', fontWeight: 500 }}>crée un compte</Link>
           {' '}pour discuter avec GolAi.
-          {' · '}
-          <Link to="/about" style={{ color: '#666666' }}>À propos</Link>
         </p>
+        <Footer />
       </div>
     </div>
   )

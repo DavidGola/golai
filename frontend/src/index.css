@@ -69,4 +69,10 @@
 .prose strong { color: #EBEBEB; font-weight: 600; }
 .prose ul, .prose ol { padding-left: 1.25em; margin: 0.5em 0; }
 .prose li { margin-bottom: 0.25em; }
-.prose h1, .prose h2, .prose h3, .prose h4 { font-weight: 600; margin: 0.75em 0 0.25em; color: #EBEBEB; }
+.prose h1 { font-size: 1.4em; font-weight: 700; margin: 0 0 0.5em; color: #EBEBEB; }
+.prose h2 { font-size: 1.1em; font-weight: 600; margin: 1.5em 0 0.4em; color: #EBEBEB; border-bottom: 1px solid #2E2E2E; padding-bottom: 0.3em; }
+.prose h3, .prose h4 { font-weight: 600; margin: 1em 0 0.25em; color: #EBEBEB; }
+.prose hr { border: none; border-top: 1px solid #2E2E2E; margin: 1.5em 0; }
+.prose table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 13px; }
+.prose th { text-align: left; padding: 6px 10px; background: #1A1A1A; border: 1px solid #2E2E2E; color: #EBEBEB; font-weight: 600; }
+.prose td { padding: 6px 10px; border: 1px solid #2E2E2E; color: #888888; vertical-align: top; }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useAuth } from '@/auth/useAuth'
 import SidebarLeft from '@/components/layout/SidebarLeft'
+import Footer from '@/components/layout/Footer'
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/david-gola-576233181/'
 const GITHUB_URL = 'https://github.com/DavidGola'
@@ -123,6 +124,8 @@ export default function AboutPage() {
               <ContactLink href={REPO_URL} label="Repo GolAi" sub="github.com" icon={<GitHubIcon />} external />
             </div>
           </section>
+
+          <Footer />
 
         </div>
       </main>

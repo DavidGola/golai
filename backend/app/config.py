@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     sentry_environment: str = "development"
     sentry_release: str = ""
     sentry_traces_sample_rate: float = 0.0
+    git_sha: str = "unknown"
 
     class Config:
         env_file = str(_ENV_FILE)
