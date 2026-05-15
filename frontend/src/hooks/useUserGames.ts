@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listUserGames, addUserGame, updateUserGame, removeUserGame, steamPreview, steamImport } from '@/api/userGames'
-import type { SteamConfirmItem } from '@/api/userGames'
+import { listUserGames, addUserGame, updateUserGame, removeUserGame, steamPreview, steamImport, psnPreview, psnImport } from '@/api/userGames'
+import type { SteamConfirmItem, PSNConfirmItem } from '@/api/userGames'
 import type { UserGameStatus } from '@/types/userGame'
 
 const KEYS = { all: ['user-games'] as const }
@@ -43,6 +43,18 @@ export function useSteamImport() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (items: SteamConfirmItem[]) => steamImport(items),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function usePSNPreview() {
+  return useMutation({ mutationFn: (online_id: string) => psnPreview(online_id) })
+}
+
+export function usePSNImport() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (items: PSNConfirmItem[]) => psnImport(items),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }

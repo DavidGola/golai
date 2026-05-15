@@ -10,6 +10,8 @@ docs/
 CLAUDE.md
 AGENTS.md
 TODO.md
+TUTO_SKILLS.md
+CONTEXT.md
 
 # Environment files
 .env
@@ -42,3 +44,6 @@ nginx.golai.example.conf
 
 # bmad
 _bmad*
+
+# Scratch
+.scratch

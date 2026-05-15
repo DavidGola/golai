@@ -7,8 +7,10 @@ from app.auth.deps import current_active_user
 from app.database import get_db
 from app.models.user import User
 from app.models.user_game import UserGameStatus
+from app.schemas.psn_import import PSNConfirmRequest, PSNConfirmResponse, PSNPreviewRequest, PSNPreviewResponse
 from app.schemas.steam_import import SteamConfirmRequest, SteamConfirmResponse, SteamPreviewRequest, SteamPreviewResponse
 from app.schemas.user_game import UserGameCreate, UserGameRead, UserGameUpdate
+from app.services import psn_import as psn_service
 from app.services import steam_import as steam_service
 from app.services import user_games as ug_service
 
@@ -86,3 +88,29 @@ async def steam_import(
 ):
     imported, skipped = await steam_service.confirm_import(db, current_user, payload.items)
     return SteamConfirmResponse(imported=imported, skipped=skipped)
+
+
+@router.post("/psn/preview", response_model=PSNPreviewResponse)
+async def psn_preview(
+    payload: PSNPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    try:
+        items = await psn_service.build_preview(db, current_user, payload.online_id)
+    except ValueError as e:
+        code = str(e)
+        if code in ("psn_npsso_invalid", "psn_api_unavailable"):
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=code)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=code)
+    return PSNPreviewResponse(items=items)
+
+
+@router.post("/psn/import", response_model=PSNConfirmResponse)
+async def psn_import(
+    payload: PSNConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    imported, skipped = await psn_service.confirm_import(db, current_user, payload.items)
+    return PSNConfirmResponse(imported=imported, skipped=skipped)

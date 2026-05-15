@@ -64,3 +64,32 @@ export async function updateUserGame(
 export async function removeUserGame(id: string): Promise<void> {
   await apiClient.delete(`/users/me/games/${id}`)
 }
+
+export const PSNPreviewItemSchema = z.object({
+  game_id: z.string(),
+  title: z.string(),
+  cover_url: z.string().nullable(),
+  trophy_progress_pct: z.number().nullable(),
+  hours_played: z.number().nullable(),
+  suggested_status: UserGameStatusSchema.nullable(),
+  already_in_library: z.boolean(),
+})
+export type PSNPreviewItem = z.infer<typeof PSNPreviewItemSchema>
+
+export type PSNConfirmItem = {
+  game_id: string
+  status: UserGameStatus | null
+  user_rating: number | null
+  review: string | null
+  hours_played: number | null
+}
+
+export async function psnPreview(online_id: string): Promise<PSNPreviewItem[]> {
+  const res = await apiClient.post<unknown>('/users/me/games/psn/preview', { online_id })
+  return z.object({ items: z.array(PSNPreviewItemSchema) }).parse(res.data).items
+}
+
+export async function psnImport(items: PSNConfirmItem[]): Promise<{ imported: number; skipped: number }> {
+  const res = await apiClient.post<unknown>('/users/me/games/psn/import', { items })
+  return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
+}

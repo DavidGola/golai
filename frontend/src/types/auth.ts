@@ -30,6 +30,8 @@ export const UserReadSchema = z.object({
 export const UserProfileSchema = UserReadSchema.extend({
   favorite_genres: z.array(GenreReadSchema),
   important_criteria: z.array(CriterionReadSchema),
+  psn_online_id: z.string().nullable().optional(),
+  last_psn_sync_at: z.string().nullable().optional(),
 })
 
 export const LoginResponseSchema = z.object({

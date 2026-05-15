@@ -5,6 +5,7 @@ import { searchGames } from '@/api/games'
 import { useAddUserGame } from '@/hooks/useUserGames'
 import type { GameListItem, UserGameStatus } from '@/types/userGame'
 import SteamImportPanel from './SteamImportPanel'
+import PSNImportPanel from './PSNImportPanel'
 
 const STATUS_OPTIONS: { value: UserGameStatus; label: string; activeClass: string }[] = [
   { value: 'completed',   label: 'Terminé',   activeClass: 'bg-[rgba(40,200,100,0.12)] text-[#5DE89E] border-[rgba(40,200,100,0.25)]' },
@@ -47,7 +48,7 @@ interface Props {
 }
 
 export default function AddGameModal({ open, onClose }: Props) {
-  const [tab, setTab] = useState<'manual' | 'steam'>('manual')
+  const [tab, setTab] = useState<'manual' | 'steam' | 'psn'>('manual')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selected, setSelected] = useState<GameListItem | null>(null)
@@ -146,6 +147,17 @@ export default function AddGameModal({ open, onClose }: Props) {
           >
             <span>🎮</span> Steam
           </button>
+          <button
+            onClick={() => setTab('psn')}
+            className={[
+              'flex items-center gap-2 px-4 py-2 text-[13px] font-medium transition-colors',
+              tab === 'psn'
+                ? 'border-b-2 border-accent-soft text-primary'
+                : 'border-b-2 border-transparent text-muted hover:text-primary',
+            ].join(' ')}
+          >
+            <span>🎮</span> PlayStation
+          </button>
         </div>
 
         {/* Body */}
@@ -153,6 +165,10 @@ export default function AddGameModal({ open, onClose }: Props) {
 
           {tab === 'steam' && (
             <SteamImportPanel onDone={onClose} />
+          )}
+
+          {tab === 'psn' && (
+            <PSNImportPanel onDone={onClose} />
           )}
 
           {tab === 'manual' && (<>

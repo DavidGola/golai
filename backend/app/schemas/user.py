@@ -24,6 +24,8 @@ class UserProfile(UserRead):
     """UserRead enrichi avec les relations — utilisé par /users/me GET."""
     favorite_genres: list[GenreRead] = []
     important_criteria: list[CriterionRead] = []
+    psn_online_id: str | None = None
+    last_psn_sync_at: datetime | None = None
 
 
 class UserCreate(schemas.BaseUserCreate):

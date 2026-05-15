@@ -25,6 +25,10 @@ export default function ProfilePage() {
     ? new Date(user.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
     : '—'
 
+  const psnSyncAt = user?.last_psn_sync_at
+    ? new Date(user.last_psn_sync_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric' })
+    : null
+
   const initial = user?.username?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?'
 
   async function handleDeleteAccount(password: string) {
@@ -94,6 +98,17 @@ export default function ProfilePage() {
                 <span className="text-[14px] font-medium text-primary">{value}</span>
               </div>
             ))}
+            {user?.psn_online_id && (
+              <div className="flex items-center justify-between border-t border-border/60 px-5 py-4">
+                <span className="text-[13px] text-muted">PlayStation</span>
+                <div className="text-right">
+                  <span className="text-[14px] font-medium text-primary">{user.psn_online_id}</span>
+                  {psnSyncAt && (
+                    <p className="text-[12px] text-faint">Sync {psnSyncAt}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

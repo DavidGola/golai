@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings
 
 _ENV_FILE = Path(__file__).parent.parent.parent / ".env"
@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     igdb_client_secret: str
     rawg_api_key: str
     steam_api_key: str = ""
+    psn_npsso: SecretStr = SecretStr("")
     opencritic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""

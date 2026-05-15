@@ -9,5 +9,9 @@ def build_store_links(game: Game) -> list[StoreLink]:
             platform="steam",
             url=f"https://store.steampowered.com/app/{game.steam_id}/",
         ))
-    # Futur : ajouter ici playstation_id, nintendo_eshop_id, xbox_id, etc.
+    if game.psn_id is not None:
+        links.append(StoreLink(
+            platform="playstation",
+            url=f"https://store.playstation.com/concept/{game.psn_id}",
+        ))
     return links
