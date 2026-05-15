@@ -14,4 +14,8 @@ def build_store_links(game: Game) -> list[StoreLink]:
             platform="playstation",
             url=f"https://store.playstation.com/concept/{game.psn_id}",
         ))
+    if game.xbox_id is not None:
+        store_urls = game.store_urls or {}
+        url = store_urls.get("xbox") or f"https://www.xbox.com/games/store/{game.xbox_id}"
+        links.append(StoreLink(platform="xbox", url=url))
     return links

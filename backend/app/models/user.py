@@ -30,6 +30,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     last_steam_sync_at: Mapped[datetime | None] = mapped_column(DateTime)
     psn_online_id: Mapped[str | None] = mapped_column(String(32), unique=True)
     last_psn_sync_at: Mapped[datetime | None] = mapped_column(DateTime)
+    xbox_gamertag: Mapped[str | None] = mapped_column(String(15), unique=True)
+    last_xbox_sync_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now(), onupdate=func.now())
 

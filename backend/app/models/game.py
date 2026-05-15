@@ -60,6 +60,7 @@ class Game(Base):
     hltb_id: Mapped[int | None] = mapped_column(Integer, unique=True)
     opencritic_id: Mapped[int | None] = mapped_column(Integer, unique=True)
     psn_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
+    xbox_id: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
 
     ingestion_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 

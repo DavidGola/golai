@@ -6,6 +6,7 @@ import { useAddUserGame } from '@/hooks/useUserGames'
 import type { GameListItem, UserGameStatus } from '@/types/userGame'
 import SteamImportPanel from './SteamImportPanel'
 import PSNImportPanel from './PSNImportPanel'
+import XboxImportPanel from './XboxImportPanel'
 
 const STATUS_OPTIONS: { value: UserGameStatus; label: string; activeClass: string }[] = [
   { value: 'completed',   label: 'Terminé',   activeClass: 'bg-[rgba(40,200,100,0.12)] text-[#5DE89E] border-[rgba(40,200,100,0.25)]' },
@@ -48,7 +49,7 @@ interface Props {
 }
 
 export default function AddGameModal({ open, onClose }: Props) {
-  const [tab, setTab] = useState<'manual' | 'steam' | 'psn'>('manual')
+  const [tab, setTab] = useState<'manual' | 'steam' | 'psn' | 'xbox'>('manual')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selected, setSelected] = useState<GameListItem | null>(null)
@@ -158,6 +159,17 @@ export default function AddGameModal({ open, onClose }: Props) {
           >
             <span>🎮</span> PlayStation
           </button>
+          <button
+            onClick={() => setTab('xbox')}
+            className={[
+              'flex items-center gap-2 px-4 py-2 text-[13px] font-medium transition-colors',
+              tab === 'xbox'
+                ? 'border-b-2 border-accent-soft text-primary'
+                : 'border-b-2 border-transparent text-muted hover:text-primary',
+            ].join(' ')}
+          >
+            <span>🎮</span> Xbox
+          </button>
         </div>
 
         {/* Body */}
@@ -169,6 +181,10 @@ export default function AddGameModal({ open, onClose }: Props) {
 
           {tab === 'psn' && (
             <PSNImportPanel onDone={onClose} />
+          )}
+
+          {tab === 'xbox' && (
+            <XboxImportPanel onDone={onClose} />
           )}
 
           {tab === 'manual' && (<>

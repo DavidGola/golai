@@ -93,3 +93,30 @@ export async function psnImport(items: PSNConfirmItem[]): Promise<{ imported: nu
   const res = await apiClient.post<unknown>('/users/me/games/psn/import', { items })
   return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
 }
+
+export const XboxPreviewItemSchema = z.object({
+  game_id: z.string(),
+  title: z.string(),
+  cover_url: z.string().nullable(),
+  achievement_progress_pct: z.number().nullable(),
+  suggested_status: UserGameStatusSchema.nullable(),
+  already_in_library: z.boolean(),
+})
+export type XboxPreviewItem = z.infer<typeof XboxPreviewItemSchema>
+
+export type XboxConfirmItem = {
+  game_id: string
+  status: UserGameStatus | null
+  user_rating: number | null
+  review: string | null
+}
+
+export async function xboxPreview(gamertag: string): Promise<XboxPreviewItem[]> {
+  const res = await apiClient.post<unknown>('/users/me/games/xbox/preview', { gamertag })
+  return z.object({ items: z.array(XboxPreviewItemSchema) }).parse(res.data).items
+}
+
+export async function xboxImport(items: XboxConfirmItem[]): Promise<{ imported: number; skipped: number }> {
+  const res = await apiClient.post<unknown>('/users/me/games/xbox/import', { items })
+  return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
+}

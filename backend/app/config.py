@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     rawg_api_key: str
     steam_api_key: str = ""
     psn_npsso: SecretStr = SecretStr("")
+    openxbl_api_key: SecretStr = SecretStr("")
     opencritic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""

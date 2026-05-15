@@ -10,9 +10,11 @@ from app.models.user_game import UserGameStatus
 from app.schemas.psn_import import PSNConfirmRequest, PSNConfirmResponse, PSNPreviewRequest, PSNPreviewResponse
 from app.schemas.steam_import import SteamConfirmRequest, SteamConfirmResponse, SteamPreviewRequest, SteamPreviewResponse
 from app.schemas.user_game import UserGameCreate, UserGameRead, UserGameUpdate
+from app.schemas.xbox_import import XboxConfirmRequest, XboxConfirmResponse, XboxPreviewRequest, XboxPreviewResponse
 from app.services import psn_import as psn_service
 from app.services import steam_import as steam_service
 from app.services import user_games as ug_service
+from app.services import xbox_import as xbox_service
 
 router = APIRouter(prefix="/users/me/games", tags=["user_games"])
 
@@ -114,3 +116,33 @@ async def psn_import(
 ):
     imported, skipped = await psn_service.confirm_import(db, current_user, payload.items)
     return PSNConfirmResponse(imported=imported, skipped=skipped)
+
+
+@router.post("/xbox/preview", response_model=XboxPreviewResponse)
+async def xbox_preview(
+    payload: XboxPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    try:
+        items = await xbox_service.build_preview(db, current_user, payload.gamertag)
+    except ValueError as e:
+        code = str(e)
+        if code == "xbox_invalid_gamertag":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=code)
+        if code == "xbox_profile_private":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=code)
+        if code == "xbox_quota_exceeded":
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=code)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=code)
+    return XboxPreviewResponse(items=items)
+
+
+@router.post("/xbox/import", response_model=XboxConfirmResponse)
+async def xbox_import(
+    payload: XboxConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(current_active_user),
+):
+    imported, skipped = await xbox_service.confirm_import(db, current_user, payload.items)
+    return XboxConfirmResponse(imported=imported, skipped=skipped)
