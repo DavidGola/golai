@@ -63,6 +63,56 @@ offset {offset};
     return await _post(client, "games", query)
 
 
+async def fetch_recent_games(client: httpx.AsyncClient, since_ts: int, offset: int = 0) -> list[dict]:
+    query = f"""
+fields id, name, summary, storyline, first_release_date, total_rating, total_rating_count,
+       genres.id, genres.name, genres.slug,
+       platforms.id, platforms.name, platforms.slug,
+       game_modes.id, game_modes.name, game_modes.slug,
+       themes.id, themes.name, themes.slug,
+       keywords.name,
+       involved_companies.company.name, involved_companies.developer,
+       cover.image_id,
+       external_games.category, external_games.uid,
+       websites.url,
+       updated_at;
+where first_release_date > {since_ts}
+      & total_rating_count > 10
+      & total_rating > 65
+      & category = null;
+sort first_release_date desc;
+limit 500;
+offset {offset};
+"""
+    return await _post(client, "games", query)
+
+
+async def fetch_upcoming_games(client: httpx.AsyncClient, until_ts: int, offset: int = 0) -> list[dict]:
+    import time
+    now_ts = int(time.time())
+    query = f"""
+fields id, name, summary, storyline, first_release_date, total_rating, total_rating_count,
+       genres.id, genres.name, genres.slug,
+       platforms.id, platforms.name, platforms.slug,
+       game_modes.id, game_modes.name, game_modes.slug,
+       themes.id, themes.name, themes.slug,
+       keywords.name,
+       involved_companies.company.name, involved_companies.developer,
+       cover.image_id,
+       external_games.category, external_games.uid,
+       websites.url,
+       updated_at;
+where first_release_date > {now_ts}
+      & first_release_date < {until_ts}
+      & (hypes > 10 | follows > 50)
+      & category = null;
+sort hypes desc;
+limit 500;
+offset {offset};
+"""
+    return await _post(client, "games", query)
+
+
 async def fetch_games_updated_since(client: httpx.AsyncClient, since_ts: int) -> list[dict]:
     query = f"""
 fields id, name, summary, storyline, first_release_date, total_rating, total_rating_count,

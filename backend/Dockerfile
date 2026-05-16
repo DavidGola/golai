@@ -5,10 +5,10 @@ ENV GIT_SHA=$GIT_SHA
 
 WORKDIR /app
 
-COPY requirements.txt .
-# Force PyTorch CPU-only (sentence-transformers/llama-index tirent CUDA par défaut)
+COPY requirements.txt requirements-dev.txt ./
+# Force PyTorch CPU-only (sentence-transformers tire CUDA par défaut)
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 COPY . .
 

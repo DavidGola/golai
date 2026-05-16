@@ -10,8 +10,6 @@ pydantic-ai>=1.84.0
 langfuse
 sentry-sdk
 litellm
-llama-index
-llama-index-vector-stores-postgres
 sentence-transformers
 httpx
 howlongtobeatpy
@@ -22,6 +20,4 @@ anthropic>=0.96.0
 sse-starlette
 python-multipart
 email-validator
-pytest
-pytest-asyncio>=0.23
 psnawp

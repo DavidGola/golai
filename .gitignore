@@ -12,6 +12,7 @@ AGENTS.md
 TODO.md
 TUTO_SKILLS.md
 CONTEXT.md
+TEST_A_FAIRE.md
 
 # Environment files
 .env
@@ -47,3 +48,6 @@ _bmad*
 
 # Scratch
 .scratch
+
+# Ingest cache (reviews, batches, state)
+.cache/

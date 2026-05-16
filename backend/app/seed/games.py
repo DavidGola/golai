@@ -1,8 +1,10 @@
 import asyncio
+import json
 import logging
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 from slugify import slugify
@@ -11,9 +13,11 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.game import Game
-from app.models.taxonomy import GameMode, Genre, Platform, Tag
-from app.models.taxonomy import games_genres, games_modes, games_platforms, games_tags
-from app.sources import hltb, rawg, steam, summarizer
+from app.models.taxonomy import GameMode, Genre, Platform, SteamTag, Tag
+from app.models.taxonomy import games_genres, games_modes, games_platforms, games_steam_tags, games_tags
+from app.sources import hltb, rawg, steam, steamspy
+
+_CACHE_DIR = Path(".cache/steam_reviews")
 
 logger = logging.getLogger(__name__)
 
@@ -102,11 +106,25 @@ async def _sync_taxonomy(
         )
 
 
+async def _sync_steam_tags(
+    session: AsyncSession,
+    game_id: uuid.UUID,
+    tags: list[dict],
+) -> None:
+    await session.execute(sa_delete(games_steam_tags).where(games_steam_tags.c.game_id == game_id))
+    for tag in tags:
+        tag_id = await _get_or_create_taxonomy(session, SteamTag, tag["slug"], tag["name"])
+        await session.execute(
+            games_steam_tags.insert().values(
+                game_id=game_id, tag_id=tag_id, vote_count=tag.get("vote_count")
+            )
+        )
+
+
 async def upsert_game(
     session: AsyncSession,
     client: httpx.AsyncClient,
     igdb_game: dict,
-    with_steam_summary: bool = True,
     force: bool = False,
 ) -> Game:
     igdb_id: int = igdb_game["id"]
@@ -205,15 +223,31 @@ async def upsert_game(
             logger.warning("[%s] Steam reviews error: %s", title, exc)
         await asyncio.sleep(0.2)
 
-        if with_steam_summary and review_texts:
+        if review_texts:
             genre_names = [g["name"] for g in (igdb_game.get("genres") or []) if g.get("name")]
-            game.steam_reviews_summary = await summarizer.summarize_reviews(
-                review_texts,
-                title,
-                genre_names,
-                game.steam_score,
-                game.steam_total_reviews,
-            )
+            _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            cache_path = _CACHE_DIR / f"{game.id}.jsonl"
+            cache_path.write_text(json.dumps({
+                "game_id": str(game.id),
+                "title": title,
+                "genres": genre_names,
+                "steam_score": game.steam_score,
+                "steam_total_reviews": game.steam_total_reviews,
+                "reviews": review_texts,
+            }))
+
+        try:
+            spy = await steamspy.fetch_appdetails(client, game.steam_id)
+            if spy:
+                await _sync_steam_tags(session, game.id, spy["tags"])
+                game.steam_owners_min = spy["owners_min"]
+                game.steam_owners_max = spy["owners_max"]
+                game.steam_players_2weeks = spy["players_2weeks"]
+                game.steam_ccu = spy["ccu"]
+                game.steam_metrics_updated_at = datetime.now(timezone.utc)
+        except Exception as exc:
+            logger.warning("[%s] SteamSpy error: %s", title, exc)
+        await asyncio.sleep(1.0)
 
     # HLTB
     try:

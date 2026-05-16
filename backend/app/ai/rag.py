@@ -17,7 +17,10 @@ _COLUMNS = """
         g.opencritic_score,
         g.steam_score,
         g.steam_total_reviews,
-        g.steam_reviews_summary,
+        g.steam_signals,
+        g.steam_players_2weeks,
+        g.steam_owners_min,
+        g.steam_owners_max,
         g.cover_url,
         g.steam_id,
         COALESCE(
@@ -31,7 +34,13 @@ _COLUMNS = """
              FROM games_platforms gp JOIN platforms pl ON pl.id = gp.platform_id
              WHERE gp.game_id = g.id),
             ''
-        ) AS platforms"""
+        ) AS platforms,
+        COALESCE(
+            (SELECT string_agg(st.name, ', ' ORDER BY gst.vote_count DESC NULLS LAST)
+             FROM games_steam_tags gst JOIN steam_tags st ON st.id = gst.tag_id
+             WHERE gst.game_id = g.id),
+            ''
+        ) AS steam_tags"""
 
 _RAG_QUERY = text(f"""
     SELECT {_COLUMNS}

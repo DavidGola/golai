@@ -218,7 +218,6 @@ async def create_eval_fixture(db: AsyncSession, item: dict[str, Any]) -> User:
             hltb_main=game_data.get("hltb_main"),
             steam_score=game_data.get("steam_score"),
             steam_total_reviews=game_data.get("steam_total_reviews"),
-            steam_reviews_summary=game_data.get("steam_reviews_summary"),
             metacritic_score=game_data.get("metacritic_score"),
             opencritic_score=game_data.get("opencritic_score"),
             igdb_rating=game_data.get("igdb_rating"),

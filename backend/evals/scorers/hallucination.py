@@ -8,7 +8,7 @@ from evals.schema import EvalItem
 
 
 async def score_hallucination(item: EvalItem, output: str, db: AsyncSession) -> float | None:
-    if not item.expected.dimensions.no_hallucination:
+    if not item.metadata.library:
         return None
 
     candidates = extract_candidate_titles(output)

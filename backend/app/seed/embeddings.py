@@ -30,8 +30,21 @@ def build_vector_string(game: Game) -> str:
         parts.append(game.storyline[:500])
     elif game.summary:
         parts.append(game.summary)
-    if game.steam_reviews_summary:
-        parts.append(f"[Avis joueurs] {game.steam_reviews_summary}")
+    if game.steam_tags:
+        parts.append(f"Steam tags : {', '.join(t.name for t in game.steam_tags[:8])}")
+    if game.steam_signals:
+        s = game.steam_signals
+        parts.append(f"[Avis] {s.get('summary', '')}")
+        parts.append(f"Forces : {', '.join(s.get('strengths', []))}")
+        parts.append(f"Critiques : {', '.join(s.get('complaints', []))}")
+        parts.append(f"Pour : {s.get('target_audience', '')}")
+        parts.append(f"Vibes : {', '.join(s.get('vibes', []))}")
+        parts.append(f"Émotions : {', '.join(s.get('emotional_tone', []))}")
+        parts.append(
+            f"Session {s.get('session_shape')} | Pacing {s.get('pacing')} | "
+            f"Difficulté {s.get('difficulty')} | Rejouabilité {s.get('replay_value')} | "
+            f"Style {s.get('art_style')}"
+        )
 
     hltb_parts = []
     if game.hltb_main:
@@ -75,6 +88,7 @@ async def generate_embeddings(session: AsyncSession, model, batch_size: int = 32
             selectinload(Game.platforms),
             selectinload(Game.modes),
             selectinload(Game.tags),
+            selectinload(Game.steam_tags),
             selectinload(Game.embeddings),
         )
     )

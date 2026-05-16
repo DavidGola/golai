@@ -41,6 +41,15 @@ games_tags = Table(
     Index("idx_games_tags_tag_id", "tag_id"),
 )
 
+games_steam_tags = Table(
+    "games_steam_tags",
+    Base.metadata,
+    Column("game_id", UUID(as_uuid=True), ForeignKey("games.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("steam_tags.id", ondelete="CASCADE"), primary_key=True),
+    Column("vote_count", Integer, nullable=True),
+    Index("idx_games_steam_tags_tag_id", "tag_id"),
+)
+
 user_favorite_genres = Table(
     "user_favorite_genres",
     Base.metadata,
@@ -100,6 +109,16 @@ class Tag(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
 
     games: Mapped[list["Game"]] = relationship(secondary=games_tags, back_populates="tags")
+
+
+class SteamTag(Base):
+    __tablename__ = "steam_tags"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    slug: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+
+    games: Mapped[list["Game"]] = relationship(secondary=games_steam_tags, back_populates="steam_tags")
 
 
 class Criterion(Base):

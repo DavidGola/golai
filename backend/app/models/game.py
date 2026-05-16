@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
-from app.models.taxonomy import games_genres, games_modes, games_platforms, games_tags
+from app.models.taxonomy import games_genres, games_modes, games_platforms, games_steam_tags, games_tags
 
 
 class Game(Base):
@@ -37,9 +37,14 @@ class Game(Base):
 
     # Steam
     steam_description: Mapped[str | None] = mapped_column(Text)
-    steam_reviews_summary: Mapped[str | None] = mapped_column(Text)
+    steam_signals: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     steam_score: Mapped[int | None] = mapped_column(SmallInteger)
     steam_total_reviews: Mapped[int | None] = mapped_column(Integer)
+    steam_owners_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    steam_owners_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    steam_players_2weeks: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    steam_ccu: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    steam_metrics_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # HLTB (heures)
     hltb_main: Mapped[float | None] = mapped_column()
@@ -72,6 +77,7 @@ class Game(Base):
     platforms: Mapped[list["Platform"]] = relationship(secondary=games_platforms, back_populates="games")
     modes: Mapped[list["GameMode"]] = relationship(secondary=games_modes, back_populates="games")
     tags: Mapped[list["Tag"]] = relationship(secondary=games_tags, back_populates="games")
+    steam_tags: Mapped[list["SteamTag"]] = relationship(secondary=games_steam_tags, back_populates="games")
     embeddings: Mapped[list["GameEmbedding"]] = relationship(back_populates="game", cascade="all, delete-orphan")
     user_games: Mapped[list["UserGame"]] = relationship(back_populates="game", cascade="all, delete-orphan")
 
