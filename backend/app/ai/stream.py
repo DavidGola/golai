@@ -188,9 +188,12 @@ async def stream_agent(
                     isinstance(event.result, ToolReturnPart)
                     and event.result.tool_name.startswith("propose_")
                     and isinstance(event.result.content, dict)
-                    and "proposal_id" in event.result.content
+                    and "action_type" in event.result.content
+                    and "error" not in event.result.content
                 ):
-                    yield {"event": "proposal", "data": event.result.content}
+                    # Draft validé par le tool — sera persisté en fin de stream
+                    # par chat.py (qui émettra le vrai event 'proposal' avec l'id DB).
+                    yield {"event": "draft", "data": event.result.content}
 
             elif isinstance(event, AgentRunResultEvent):
                 if not tool_called and not buffer_flushed:

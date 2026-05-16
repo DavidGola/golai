@@ -1,25 +1,25 @@
 import json
 import logging
-import uuid
 from typing import AsyncIterator
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-logger = logging.getLogger(__name__)
-
+import app.services.proposals as proposals_service
 from app.ai.agent import AgentDeps
 from app.ai.citations import cited_games_sse_event
 from app.ai.stream import stream_agent
-from app.models.conversation import Conversation, Message, MessageRole
-from app.models.message_proposal import MessageProposal, ProposalActionType, ProposalState
-from app.models.user import User
 from app.config import settings
+from app.models.conversation import Conversation, Message, MessageRole
+from app.models.user import User
 from app.observability import captured_input, observe, safe_update
 from app.schemas.conversation import ChatIntent
+from app.schemas.proposals import ProposalDraft, parse_draft_dict
 from app.services.chat_intents import short_circuit_response
 from app.services.conversations import append_message
+
+logger = logging.getLogger(__name__)
 
 
 async def stream_reply(
@@ -74,7 +74,7 @@ async def stream_reply(
 
     final_output = ""
     usage_info = None
-    pending_proposals: list[dict] = []
+    pending_drafts: list[ProposalDraft] = []
 
     metadata = {
         "conversation_id": str(conversation.id),
@@ -99,9 +99,13 @@ async def stream_reply(
                 yield f"event: tool_call\ndata: {json.dumps(event['data'])}\n\n"
             elif event["event"] == "tool_result":
                 yield f"event: tool_result\ndata: {json.dumps(event['data'])}\n\n"
-            elif event["event"] == "proposal":
-                pending_proposals.append(event["data"])
-                yield f"event: proposal\ndata: {json.dumps(event['data'])}\n\n"
+            elif event["event"] == "draft":
+                # Collecte silencieuse — l'event SSE 'proposal' (avec id DB) sera
+                # émis en fin de stream après persist_drafts.
+                try:
+                    pending_drafts.append(parse_draft_dict(event["data"]))
+                except Exception as exc:
+                    logger.warning("chat.draft_parse_error", extra={"error": str(exc), "data": event["data"]})
             elif event["event"] == "result":
                 final_output = event["data"]["output"]
                 usage_info = event["data"]["usage"]
@@ -153,20 +157,26 @@ async def stream_reply(
                 cited_games=cited_dicts,
             )
 
-            for proposal_data in pending_proposals:
-                try:
-                    action_type = ProposalActionType(proposal_data["action_type"])
-                    payload = {k: v for k, v in proposal_data.items() if k not in ("proposal_id", "action_type")}
-                    db.add(MessageProposal(
-                        id=uuid.UUID(proposal_data["proposal_id"]),
-                        message_id=assistant_msg.id,
-                        action_type=action_type,
-                        payload=payload,
-                    ))
-                except Exception as exc:
-                    logger.warning("chat.proposal_persist_error", extra={"error": str(exc)})
-            if pending_proposals:
-                await db.commit()
+            # Trade-off UX assumé : on persiste + émet les events `proposal` ICI
+                # (fin du stream) plutôt qu'inline au moment du tool call.
+                # Conséquence : les cartes apparaissent ~après la dernière ligne
+                # du message au lieu de pendant l'écriture.
+                # Pourquoi ce choix : l'id naît au persist (élimine les orphan ids
+                # côté frontend). Une émission inline nécessiterait de créer le
+                # Message assistant en début de stream pour avoir un message_id
+                # disponible — refacto plus profond, à faire séparément si l'UX
+                # le justifie (cf. TODO.md "Proposals inline pendant le stream").
+            if pending_drafts:
+                persisted = await proposals_service.persist_drafts(
+                    db, assistant_msg.id, pending_drafts
+                )
+                for row in persisted:
+                    proposal_event = {
+                        "proposal_id": str(row.id),
+                        "action_type": row.action_type.value,
+                        **row.payload,
+                    }
+                    yield f"event: proposal\ndata: {json.dumps(proposal_event)}\n\n"
 
             if conversation.title is None:
                 snippet = user_content.strip().splitlines()[0][:60]

@@ -17,6 +17,13 @@ from app.models.game import Game
 from app.models.user import User
 from app.models.user_game import UserGame, UserGameStatus
 from app.observability import get_agent_instrumentation
+import app.services.proposals as proposals_service
+from app.schemas.proposals import (
+    AddToLibraryDraft,
+    ChangeStatusDraft,
+    RemoveFromLibraryDraft,
+    SetRatingDraft,
+)
 
 
 def _build_model() -> tuple[Model, ModelSettings | None]:
@@ -222,6 +229,26 @@ async def get_my_library(
     ]
 
 
+# ─── Tools propose_* — fines couches vers proposals_service ──────────────────
+# Les tools renvoient un Draft sérialisé (model_dump) ou un dict d'erreur.
+# Ne génèrent JAMAIS d'id : l'id naît au persist (services/proposals.persist_drafts).
+# Aucun SQL ici — tout passe par proposals_service.draft_*.
+
+
+def _draft_to_tool_result(draft: AddToLibraryDraft | ChangeStatusDraft | SetRatingDraft | RemoveFromLibraryDraft) -> dict:
+    """Sérialise un Draft pour retour au LLM ET stream.py (qui détecte 'action_type' pour relayer)."""
+    return draft.model_dump(mode="json")
+
+
+def _parse_uuid_or_none(value: str | None) -> uuid.UUID | None:
+    if value is None:
+        return None
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        return None
+
+
 @agent.tool
 async def propose_add_to_library(
     ctx: RunContext[AgentDeps],
@@ -235,52 +262,21 @@ async def propose_add_to_library(
     game_id : provient d'un résultat search_games. status : "todo", "not_started", "completed", "dropped".
     rating : entier 1-10 (optionnel). review : texte libre (optionnel).
     Retourne une erreur si le jeu est déjà dans la bibliothèque."""
-    try:
-        gid = uuid.UUID(game_id)
-    except ValueError:
+    gid = _parse_uuid_or_none(game_id)
+    if gid is None:
         return {"error": "invalid_game_id"}
 
-    game = await ctx.deps.db.get(Game, gid)
-    if not game:
-        return {"error": "game_not_found"}
-
-    existing = await ctx.deps.db.execute(
-        select(UserGame).where(UserGame.user_id == ctx.deps.user.id, UserGame.game_id == gid)
+    draft_or_error = await proposals_service.draft_add_to_library(
+        ctx.deps.db,
+        ctx.deps.user.id,
+        game_id=gid,
+        status_value=status,
+        rating=rating,
+        review=review,
     )
-    ug = existing.scalar_one_or_none()
-    if ug:
-        return {
-            "error": "already_in_library",
-            "user_game_id": str(ug.id),
-            "current_status": ug.status.value if ug.status else None,
-            "current_rating": ug.user_rating,
-        }
-
-    try:
-        validated_status = UserGameStatus(status) if status else None
-    except ValueError:
-        validated_status = None
-
-    if rating is not None and not (1 <= rating <= 10):
-        return {"error": "invalid_rating", "message": "La note doit être entre 1 et 10."}
-
-    proposal_id = str(uuid.uuid4())
-    return {
-        "proposal_id": proposal_id,
-        "action_type": "add_to_library",
-        "game_id": game_id,
-        "status": validated_status.value if validated_status else None,
-        "rating": rating,
-        "review": review,
-        "title": game.title,
-        "cover_url": game.cover_url,
-        "current": None,
-        "target": {
-            "status": validated_status.value if validated_status else None,
-            "rating": rating,
-            "review": review,
-        },
-    }
+    if isinstance(draft_or_error, dict):
+        return draft_or_error
+    return _draft_to_tool_result(draft_or_error)
 
 
 @agent.tool
@@ -295,50 +291,23 @@ async def propose_change_status(
     user_game_id : l'id du UserGame (obtenu via get_my_library).
     game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
     new_status : "todo", "not_started", "completed", "dropped"."""
-    try:
-        target_status = UserGameStatus(new_status)
-    except ValueError:
-        return {"error": "invalid_status", "valid_values": [s.value for s in UserGameStatus]}
+    ugid = _parse_uuid_or_none(user_game_id)
+    gid = _parse_uuid_or_none(game_id)
+    if user_game_id and ugid is None:
+        return {"error": "invalid_user_game_id"}
+    if game_id and gid is None:
+        return {"error": "invalid_game_id"}
 
-    ug = None
-    if user_game_id:
-        try:
-            ugid = uuid.UUID(user_game_id)
-        except ValueError:
-            return {"error": "invalid_user_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    elif game_id:
-        try:
-            gid = uuid.UUID(game_id)
-        except ValueError:
-            return {"error": "invalid_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    else:
-        return {"error": "must_provide_user_game_id_or_game_id"}
-
-    if not ug:
-        return {"error": "not_in_library"}
-
-    proposal_id = str(uuid.uuid4())
-    return {
-        "proposal_id": proposal_id,
-        "action_type": "change_status",
-        "user_game_id": str(ug.id),
-        "new_status": target_status.value,
-        "game_id": str(ug.game_id),
-        "title": ug.game.title,
-        "cover_url": ug.game.cover_url,
-        "current": {"status": ug.status.value if ug.status else None},
-        "target": {"status": target_status.value},
-    }
+    draft_or_error = await proposals_service.draft_change_status(
+        ctx.deps.db,
+        ctx.deps.user.id,
+        new_status_value=new_status,
+        user_game_id=ugid,
+        game_id=gid,
+    )
+    if isinstance(draft_or_error, dict):
+        return draft_or_error
+    return _draft_to_tool_result(draft_or_error)
 
 
 @agent.tool
@@ -354,49 +323,24 @@ async def propose_set_rating(
     user_game_id : l'id du UserGame (obtenu via get_my_library).
     game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
     rating : entier 1-10. review : texte libre."""
-    if rating is not None and not (1 <= rating <= 10):
-        return {"error": "invalid_rating", "message": "La note doit être entre 1 et 10."}
+    ugid = _parse_uuid_or_none(user_game_id)
+    gid = _parse_uuid_or_none(game_id)
+    if user_game_id and ugid is None:
+        return {"error": "invalid_user_game_id"}
+    if game_id and gid is None:
+        return {"error": "invalid_game_id"}
 
-    ug = None
-    if user_game_id:
-        try:
-            ugid = uuid.UUID(user_game_id)
-        except ValueError:
-            return {"error": "invalid_user_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    elif game_id:
-        try:
-            gid = uuid.UUID(game_id)
-        except ValueError:
-            return {"error": "invalid_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    else:
-        return {"error": "must_provide_user_game_id_or_game_id"}
-
-    if not ug:
-        return {"error": "not_in_library"}
-
-    proposal_id = str(uuid.uuid4())
-    return {
-        "proposal_id": proposal_id,
-        "action_type": "set_rating",
-        "user_game_id": str(ug.id),
-        "rating": rating,
-        "review": review,
-        "game_id": str(ug.game_id),
-        "title": ug.game.title,
-        "cover_url": ug.game.cover_url,
-        "current": {"rating": ug.user_rating, "review": ug.review},
-        "target": {"rating": rating, "review": review},
-    }
+    draft_or_error = await proposals_service.draft_set_rating(
+        ctx.deps.db,
+        ctx.deps.user.id,
+        user_game_id=ugid,
+        game_id=gid,
+        rating=rating,
+        review=review,
+    )
+    if isinstance(draft_or_error, dict):
+        return draft_or_error
+    return _draft_to_tool_result(draft_or_error)
 
 
 @agent.tool
@@ -409,44 +353,22 @@ async def propose_remove_from_library(
     Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
     user_game_id : l'id du UserGame (obtenu via get_my_library).
     game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique)."""
-    ug = None
-    if user_game_id:
-        try:
-            ugid = uuid.UUID(user_game_id)
-        except ValueError:
-            return {"error": "invalid_user_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.id == ugid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    elif game_id:
-        try:
-            gid = uuid.UUID(game_id)
-        except ValueError:
-            return {"error": "invalid_game_id"}
-        result = await ctx.deps.db.execute(
-            select(UserGame).options(selectinload(UserGame.game))
-            .where(UserGame.game_id == gid, UserGame.user_id == ctx.deps.user.id)
-        )
-        ug = result.scalar_one_or_none()
-    else:
-        return {"error": "must_provide_user_game_id_or_game_id"}
+    ugid = _parse_uuid_or_none(user_game_id)
+    gid = _parse_uuid_or_none(game_id)
+    if user_game_id and ugid is None:
+        return {"error": "invalid_user_game_id"}
+    if game_id and gid is None:
+        return {"error": "invalid_game_id"}
 
-    if not ug:
-        return {"error": "not_in_library"}
-
-    proposal_id = str(uuid.uuid4())
-    return {
-        "proposal_id": proposal_id,
-        "action_type": "remove_from_library",
-        "user_game_id": str(ug.id),
-        "game_id": str(ug.game_id),
-        "title": ug.game.title,
-        "cover_url": ug.game.cover_url,
-        "current": {"status": ug.status.value if ug.status else None},
-        "target": None,
-    }
+    draft_or_error = await proposals_service.draft_remove_from_library(
+        ctx.deps.db,
+        ctx.deps.user.id,
+        user_game_id=ugid,
+        game_id=gid,
+    )
+    if isinstance(draft_or_error, dict):
+        return draft_or_error
+    return _draft_to_tool_result(draft_or_error)
 
 
 @dataclass
