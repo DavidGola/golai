@@ -6,18 +6,16 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai import messages as pai_messages
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
-from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
+import app.services.proposals as proposals_service
+import app.services.user_games as ug_service
 from app.ai.prompts import build_auth_system_prompt, build_anonymous_system_prompt
 from app.ai.rag import retrieve_games
 from app.config import settings
-from app.models.game import Game
 from app.models.user import User
-from app.models.user_game import UserGame, UserGameStatus
+from app.models.user_game import UserGameStatus
 from app.observability import get_agent_instrumentation
-import app.services.proposals as proposals_service
 from app.schemas.proposals import (
     AddToLibraryDraft,
     ChangeStatusDraft,
@@ -189,43 +187,43 @@ async def get_my_library(
 
     sort_by : "playtime" (heures jouées desc), "rating" (note user desc), "recent" (ajout desc).
     status  : filtre optionnel — "completed", "todo", "dropped", "not_started".
-    limit   : nombre max de jeux retournés (1-100, défaut 20).
+    limit   : nombre max de jeux retournés (1-100, défaut 50).
     """
-    limit = max(1, min(limit, 100))
+    bounded_limit = max(1, min(limit, 100))
 
-    stmt = (
-        select(UserGame, Game)
-        .join(Game, UserGame.game_id == Game.id)
-        .options(selectinload(Game.genres))
-        .where(UserGame.user_id == ctx.deps.user.id)
-    )
-
+    parsed_status: UserGameStatus | None = None
     if status is not None:
         try:
-            stmt = stmt.where(UserGame.status == UserGameStatus(status))
+            parsed_status = UserGameStatus(status)
         except ValueError:
-            pass
+            parsed_status = None
 
+    normalized_sort: ug_service.LibrarySortBy
     if sort_by == "rating":
-        stmt = stmt.order_by(desc(UserGame.user_rating).nulls_last())
+        normalized_sort = "rating"
     elif sort_by == "recent":
-        stmt = stmt.order_by(desc(UserGame.added_at))
+        normalized_sort = "recent"
     else:
-        stmt = stmt.order_by(desc(UserGame.hours_played).nulls_last())
+        normalized_sort = "playtime"
 
-    stmt = stmt.limit(limit)
-    rows = (await ctx.deps.db.execute(stmt)).all()
+    entries = await ug_service.list_library(
+        ctx.deps.db,
+        ctx.deps.user.id,
+        status=parsed_status,
+        sort_by=normalized_sort,
+        limit=bounded_limit,
+    )
 
     return [
         {
             "user_game_id": str(ug.id),
-            "title": game.title,
-            "genres": [g.name for g in game.genres],
+            "title": ug.game.title,
+            "genres": [g.name for g in ug.game.genres],
             "hours_played": ug.hours_played,
             "status": ug.status.value if ug.status else None,
             "user_rating": ug.user_rating,
         }
-        for ug, game in rows
+        for ug in entries
     ]
 
 

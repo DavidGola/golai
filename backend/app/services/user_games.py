@@ -1,6 +1,7 @@
 import uuid
+from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -9,10 +10,26 @@ from app.models.game import Game
 from app.models.user_game import UserGame, UserGameStatus
 from app.schemas.user_game import UserGameCreate, UserGameUpdate
 
+LibrarySortBy = Literal["recent", "playtime", "rating"]
+
 
 async def list_library(
-    db: AsyncSession, user_id: uuid.UUID, status: UserGameStatus | None = None
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    status: UserGameStatus | None = None,
+    *,
+    sort_by: LibrarySortBy = "recent",
+    limit: int | None = None,
 ) -> list[UserGame]:
+    """
+    Liste la Library d'un user.
+
+    sort_by :
+    - "recent"   : ajout descendant (defaut, comportement historique)
+    - "playtime" : heures jouées desc, NULLs en dernier
+    - "rating"   : note user desc, NULLs en dernier
+    limit : nombre max d'entrées. None = pas de limite.
+    """
     query = (
         select(UserGame)
         .options(selectinload(UserGame.game).options(
@@ -23,7 +40,17 @@ async def list_library(
     )
     if status:
         query = query.where(UserGame.status == status)
-    query = query.order_by(UserGame.added_at.desc())
+
+    if sort_by == "playtime":
+        query = query.order_by(desc(UserGame.hours_played).nulls_last())
+    elif sort_by == "rating":
+        query = query.order_by(desc(UserGame.user_rating).nulls_last())
+    else:  # "recent"
+        query = query.order_by(UserGame.added_at.desc())
+
+    if limit is not None:
+        query = query.limit(limit)
+
     return list((await db.execute(query)).scalars().all())
 
 
