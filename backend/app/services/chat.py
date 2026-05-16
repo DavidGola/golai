@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import app.services.proposals as proposals_service
-from app.ai.agent import AgentDeps
+from app.ai.agent import AgentDeps, agent
 from app.ai.citations import cited_games_sse_event
-from app.ai.stream import stream_agent
+from app.ai.stream import format_sse_event, stream_agent
 from app.config import settings
 from app.models.conversation import Conversation, Message, MessageRole
 from app.models.user import User
@@ -90,16 +90,13 @@ async def stream_reply(
         session_id=str(conversation.id),
         tags=["chat", "auth"],
     ) as observation:
-        async for event in stream_agent(deps, user_content, history):
-            if event["event"] == "token":
-                yield f"event: token\ndata: {json.dumps({'text': event['data']})}\n\n"
-            elif event["event"] == "tool":
-                yield f"event: tool\ndata: {json.dumps({'name': event['data']})}\n\n"
-            elif event["event"] == "tool_call":
-                yield f"event: tool_call\ndata: {json.dumps(event['data'])}\n\n"
-            elif event["event"] == "tool_result":
-                yield f"event: tool_result\ndata: {json.dumps(event['data'])}\n\n"
-            elif event["event"] == "draft":
+        async for event in stream_agent(agent, deps, user_content, history):
+            sse = format_sse_event(event)
+            if sse:
+                yield sse
+
+            # Side-effects spécifiques à l'agent auth :
+            if event["event"] == "draft":
                 # Collecte silencieuse — l'event SSE 'proposal' (avec id DB) sera
                 # émis en fin de stream après persist_drafts.
                 try:
@@ -115,7 +112,6 @@ async def stream_reply(
                     output={"error": event["data"]},
                     metadata={**metadata, "status": "error"},
                 )
-                yield f"event: error\ndata: {json.dumps({'message': event['data']})}\n\n"
                 return
 
         if final_output:

@@ -2,9 +2,10 @@ import json
 import logging
 import re
 import time
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from pydantic_ai import (
+    Agent,
     AgentRunResultEvent,
     FunctionToolCallEvent,
     FunctionToolResultEvent,
@@ -13,7 +14,7 @@ from pydantic_ai import (
 )
 from pydantic_ai.messages import TextPart, TextPartDelta, ToolReturnPart
 
-from app.ai.agent import AgentDeps, agent, db_messages_to_history
+from app.ai.agent import db_messages_to_history
 
 logger = logging.getLogger(__name__)
 
@@ -80,19 +81,24 @@ def _extract_text_from_part_delta(event: PartDeltaEvent) -> str:
 
 
 async def stream_agent(
-    deps: AgentDeps,
+    agent: Agent[Any, str],
+    deps: Any,
     user_message: str,
     history: list,
 ) -> AsyncIterator[dict]:
     """
-    Génère des events normalisés depuis le stream pydantic-ai.
+    Génère des events normalisés depuis le stream pydantic-ai d'un agent donné.
+
+    Marche pour l'agent auth comme pour l'agent anonyme (paramétré par `agent`).
+    L'isolation de toolsets reste assurée par pydantic-ai (cf. ADR-0015,
+    test_anonymous_agent_safety).
 
     Events émis :
     - {"event": "token", "data": <chunk de texte>}
     - {"event": "tool", "data": <nom de l'outil>}
     - {"event": "tool_call", "data": {tool_call_id, name, args_preview}}
     - {"event": "tool_result", "data": {tool_call_id, name, duration_ms, result_preview}}
-    - {"event": "proposal", "data": <payload de la proposition>}
+    - {"event": "draft", "data": <payload du Draft Proposal>}
     - {"event": "result", "data": {"output": <str>, "usage": {...}}}
     - {"event": "error", "data": <str>}
     """
@@ -114,7 +120,7 @@ async def stream_agent(
         buffer_flushed = True
 
     try:
-        async for event in agent.run_stream_events(
+        async for event in agent.run_stream_events(  # type: ignore[attr-defined]
             user_message,
             message_history=message_history,
             deps=deps,
@@ -219,3 +225,31 @@ async def stream_agent(
                 }
     except Exception as e:
         yield {"event": "error", "data": str(e)}
+
+
+# ─── Traduction event → SSE ──────────────────────────────────────────────────
+# Seul point d'émission SSE de l'app. Garantit que tout caller (auth/anon)
+# obtient le même format. Les events internes ('draft', 'result') retournent
+# None — ils sont consommés par le service appelant pour ses side-effects.
+
+
+def format_sse_event(event: dict) -> str | None:
+    """Traduit un event normalisé (de stream_agent) en chaîne SSE prête à yield.
+
+    Retourne None pour les events internes ('draft', 'result') que le service
+    appelant doit traiter lui-même (persistance, accumulation) sans relayer
+    au frontend.
+    """
+    kind = event["event"]
+    if kind == "token":
+        return f"event: token\ndata: {json.dumps({'text': event['data']})}\n\n"
+    if kind == "tool":
+        return f"event: tool\ndata: {json.dumps({'name': event['data']})}\n\n"
+    if kind == "tool_call":
+        return f"event: tool_call\ndata: {json.dumps(event['data'])}\n\n"
+    if kind == "tool_result":
+        return f"event: tool_result\ndata: {json.dumps(event['data'])}\n\n"
+    if kind == "error":
+        return f"event: error\ndata: {json.dumps({'message': event['data']})}\n\n"
+    # 'draft' et 'result' : events internes — pas de SSE direct
+    return None

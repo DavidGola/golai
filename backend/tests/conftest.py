@@ -200,7 +200,7 @@ async def conversation_a(db_session, user_a):
 
 @pytest.fixture
 def mock_stream_agent(monkeypatch):
-    async def fake_stream(deps, user_message, history):
+    async def fake_stream(agent, deps, user_message, history):
         yield {"event": "token", "data": "hello "}
         yield {"event": "token", "data": "world"}
         yield {
@@ -222,7 +222,7 @@ def mock_stream_agent(monkeypatch):
 
 @pytest.fixture
 def mock_stream_agent_error(monkeypatch):
-    async def fake_stream_error(deps, user_message, history):
+    async def fake_stream_error(agent, deps, user_message, history):
         yield {"event": "error", "data": "LLM unavailable"}
 
     monkeypatch.setattr("app.services.chat.stream_agent", fake_stream_error)

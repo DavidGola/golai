@@ -1,11 +1,13 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
+from typing import Protocol
 
 from pydantic_ai import Agent, RunContext
 from pydantic_ai import messages as pai_messages
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
+from pydantic_ai.toolsets import FunctionToolset
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.services.proposals as proposals_service
@@ -22,6 +24,13 @@ from app.schemas.proposals import (
     RemoveFromLibraryDraft,
     SetRatingDraft,
 )
+
+
+class HasDb(Protocol):
+    """Contract structurel : tout deps avec une AsyncSession `db` peut utiliser
+    les tools du search_toolset partagé. Implémenté par AgentDeps et
+    AnonymousAgentDeps via structural typing (pas d'héritage)."""
+    db: AsyncSession
 
 
 def _build_model() -> tuple[Model, ModelSettings | None]:
@@ -129,12 +138,46 @@ class AgentDeps:
     user: User
 
 
+@dataclass
+class AnonymousAgentDeps:
+    db: AsyncSession
+
+
+# ─── Toolset partagé : tools accessibles aux deux agents (auth + anonyme) ────
+# Le LLM voit le même nom (`search_games`) dans les deux contextes — pas de
+# duplication de définition. Le toolset accepte tout deps qui satisfait le
+# protocol HasDb (structural typing).
+search_toolset: FunctionToolset[HasDb] = FunctionToolset()
+
+
+@search_toolset.tool
+async def search_games(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
+    """Recherche des jeux pertinents par similarité sémantique."""
+    return await retrieve_games(ctx.deps.db, query, top_k)
+
+
+@search_toolset.tool
+async def search_games_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
+    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats."""
+    batches: list[list[dict]] = list(await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k) for q in queries]))
+    seen_ids: set[str] = set()
+    merged: list[dict] = []
+    for batch in batches:
+        for game in batch:
+            gid = game.get("id")
+            if gid and gid not in seen_ids:
+                seen_ids.add(gid)
+                merged.append(game)
+    return merged
+
+
 _model, _model_settings = _build_model()
 
 agent: Agent[AgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
     deps_type=AgentDeps,
+    toolsets=[search_toolset],
     name="golai-auth-agent",
     instrument=get_agent_instrumentation(),
 )
@@ -153,27 +196,6 @@ async def build_system_prompt(ctx: RunContext[AgentDeps]) -> str:
         f"\n- Critères importants : {criteria}"
     )
     return build_auth_system_prompt() + profile
-
-
-@agent.tool
-async def search_games(ctx: RunContext[AgentDeps], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
-    """Recherche des jeux pertinents par similarité sémantique."""
-    return await retrieve_games(ctx.deps.db, query, top_k)
-
-
-@agent.tool
-async def search_games_multi(ctx: RunContext[AgentDeps], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
-    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats."""
-    batches: list[list[dict]] = list(await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k) for q in queries]))
-    seen_ids: set[str] = set()
-    merged: list[dict] = []
-    for batch in batches:
-        for game in batch:
-            gid = game.get("id")
-            if gid and gid not in seen_ids:
-                seen_ids.add(gid)
-                merged.append(game)
-    return merged
 
 
 @agent.tool
@@ -369,41 +391,15 @@ async def propose_remove_from_library(
     return _draft_to_tool_result(draft_or_error)
 
 
-@dataclass
-class AnonymousAgentDeps:
-    db: AsyncSession
-
-
 anonymous_agent: Agent[AnonymousAgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
     deps_type=AnonymousAgentDeps,
+    toolsets=[search_toolset],
     system_prompt=build_anonymous_system_prompt(),
     name="golai-anonymous-agent",
     instrument=get_agent_instrumentation(),
 )
-
-
-@anonymous_agent.tool
-async def search_games_anon(ctx: RunContext[AnonymousAgentDeps], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
-    """Recherche des jeux pertinents par similarité sémantique."""
-    return await retrieve_games(ctx.deps.db, query, top_k)
-
-
-@anonymous_agent.tool
-async def search_games_multi_anon(ctx: RunContext[AnonymousAgentDeps], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
-    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats."""
-    tasks = [retrieve_games(ctx.deps.db, q, top_k) for q in queries]
-    results = await asyncio.gather(*tasks)
-    seen_ids: set[str] = set()
-    merged: list[dict] = []
-    for batch in results:
-        for game in batch:
-            gid = game.get("id")
-            if gid and gid not in seen_ids:
-                seen_ids.add(gid)
-                merged.append(game)
-    return merged
 
 
 def history_dicts_to_messages(history: list) -> list[pai_messages.ModelMessage]:

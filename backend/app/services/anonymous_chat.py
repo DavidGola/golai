@@ -1,20 +1,17 @@
 import json
+import logging
 from typing import AsyncIterator
 
-from pydantic_ai import (
-    AgentRunResultEvent,
-    FunctionToolCallEvent,
-    PartDeltaEvent,
-    PartStartEvent,
-)
-from pydantic_ai.messages import TextPart, TextPartDelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.agent import AnonymousAgentDeps, anonymous_agent, history_dicts_to_messages
+from app.ai.agent import AnonymousAgentDeps, anonymous_agent
 from app.ai.citations import cited_games_sse_event
+from app.ai.stream import format_sse_event, stream_agent
 from app.config import settings
 from app.observability import captured_input, observe, safe_update
 from app.schemas.chat import AnonymousHistoryMessage
+
+logger = logging.getLogger(__name__)
 
 
 async def stream_anonymous_reply(
@@ -22,14 +19,18 @@ async def stream_anonymous_reply(
     content: str,
     history: list[AnonymousHistoryMessage],
 ) -> AsyncIterator[str]:
+    """Stream SSE pour le chat anonyme. Pas de persistance, pas de Proposals.
+
+    Mêmes events SSE que stream_reply (auth) sauf 'proposal' qui ne peut pas
+    être émis (l'agent anonyme n'a aucun tool propose_*, garanti par toolset
+    isolation — cf. test_anonymous_agent_safety).
+    """
     history_dicts = [{"role": m.role, "content": m.content} for m in history]
-    message_history = history_dicts_to_messages(history_dicts)
     deps = AnonymousAgentDeps(db=db)
 
-    usage_info = None
-    final_output = ""
-
     metadata = {"model": settings.litellm_model, "route": "anonymous"}
+    final_output = ""
+    usage_info: dict | None = None
 
     with observe(
         "chat.stream_anonymous_reply",
@@ -37,38 +38,21 @@ async def stream_anonymous_reply(
         metadata=metadata,
         tags=["chat", "anonymous"],
     ) as observation:
-        try:
-            async for event in anonymous_agent.run_stream_events(
-                content,
-                message_history=message_history,
-                deps=deps,
-            ):
-                if isinstance(event, PartStartEvent) and isinstance(event.part, TextPart):
-                    if event.part.content:
-                        yield f"event: token\ndata: {json.dumps({'text': event.part.content})}\n\n"
-                elif isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
-                    if event.delta.content_delta:
-                        yield f"event: token\ndata: {json.dumps({'text': event.delta.content_delta})}\n\n"
-                elif isinstance(event, FunctionToolCallEvent):
-                    yield f"event: tool\ndata: {json.dumps({'name': event.part.tool_name})}\n\n"
-                elif isinstance(event, AgentRunResultEvent):
-                    final_output = event.result.output
-                    usage = event.result.usage()
-                    usage_info = {
-                        "total_tokens": usage.total_tokens or 0,
-                        "input_tokens": usage.input_tokens or 0,
-                        "output_tokens": usage.output_tokens or 0,
-                        "cache_read_tokens": usage.cache_read_tokens or 0,
-                        "cache_write_tokens": usage.cache_write_tokens or 0,
-                    }
-        except Exception as e:
-            safe_update(
-                observation,
-                output={"error": str(e)},
-                metadata={**metadata, "status": "error"},
-            )
-            yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
-            return
+        async for event in stream_agent(anonymous_agent, deps, content, history_dicts):
+            sse = format_sse_event(event)
+            if sse:
+                yield sse
+
+            if event["event"] == "result":
+                final_output = event["data"]["output"]
+                usage_info = event["data"]["usage"]
+            elif event["event"] == "error":
+                safe_update(
+                    observation,
+                    output={"error": event["data"]},
+                    metadata={**metadata, "status": "error"},
+                )
+                return
 
         safe_update(
             observation,

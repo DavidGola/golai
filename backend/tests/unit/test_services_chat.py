@@ -81,7 +81,7 @@ async def test_stream_reply_empty_library_short_circuit_persists_zero_tokens(
 async def test_stream_reply_passes_history(db_session, user_a, conversation_a, monkeypatch):
     received_history = []
 
-    async def spy_stream(deps, user_message, history):
+    async def spy_stream(agent, deps, user_message, history):
         received_history.extend(history)
         yield {"event": "token", "data": "ok"}
         import json
