@@ -1,137 +1,86 @@
-import asyncio
-from datetime import UTC, datetime
+"""PSN Library import — wrapper fin sur library_import_service.
 
-from sqlalchemy import select, text
+L'adapter `PSNSource` implémente le Protocol LibraryImportSource.
+"""
+
+import asyncio
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.game import Game
 from app.models.user import User
-from app.models.user_game import UserGame, UserGameStatus
 from app.schemas.psn_import import PSNConfirmItem, PSNPreviewItem
+from app.services.library_import import (
+    ExternalOwnedGame,
+    build_preview_generic,
+    confirm_import_generic,
+)
 from app.sources import psn
 
 
-def _suggest_status(trophy_pct: int | None) -> UserGameStatus | None:
-    if trophy_pct is None:
-        return None
-    if trophy_pct == 100:
-        return UserGameStatus.completed
-    if trophy_pct > 0:
-        return UserGameStatus.todo
-    return UserGameStatus.not_started
+class PSNSource:
+    source_name = "psn"
+    use_fuzzy_title_match = True  # PSN n'expose pas l'id Steam, fallback titre
+    user_account_attr = "psn_online_id"
+    user_sync_at_attr = "last_psn_sync_at"
+    game_source_id_attr = "psn_id"
+
+    async def resolve_account(self, raw_input: str) -> tuple[str, str]:
+        # PSN : l'online_id user EST déjà l'identifiant d'API.
+        return raw_input, raw_input
+
+    async def fetch_owned(self, account_id: Any) -> list[ExternalOwnedGame]:
+        npsso = settings.psn_npsso.get_secret_value()
+        dtos = await asyncio.to_thread(psn.fetch_library, npsso, account_id)
+        return [
+            ExternalOwnedGame(
+                source_id=dto.psn_id,
+                title=dto.title,
+                cover_url=dto.cover_url,
+                completion_pct=dto.trophy_progress_pct,
+                playtime_minutes=(
+                    int(dto.hours_played * 60) if dto.hours_played is not None else None
+                ),
+            )
+            for dto in dtos
+        ]
+
+    def cast_source_id_for_db(self, source_id: str) -> str:
+        return source_id  # Game.psn_id est String
+
+
+psn_source = PSNSource()
 
 
 async def build_preview(
     db: AsyncSession, user: User, online_id: str
 ) -> list[PSNPreviewItem]:
-    """Fetch and match user's PSN library. Raises ValueError on error."""
-    npsso = settings.psn_npsso.get_secret_value()
-    dtos = await asyncio.to_thread(psn.fetch_library, npsso, online_id)
-
-    if not dtos:
-        user.psn_online_id = online_id
-        user.last_psn_sync_at = datetime.now(UTC).replace(tzinfo=None)
-        await db.commit()
-        return []
-
-    psn_ids = [d.psn_id for d in dtos]
-    games_by_psn_id: dict[str, Game] = {}
-
-    rows = (await db.execute(
-        select(Game).where(Game.psn_id.in_(psn_ids))
-    )).scalars().all()
-    for g in rows:
-        if g.psn_id:
-            games_by_psn_id[g.psn_id] = g
-
-    for dto in dtos:
-        if dto.psn_id in games_by_psn_id:
-            continue
-
-        # Fuzzy title match via pg_trgm
-        result = await db.execute(
-            text(
-                "SELECT id FROM games "
-                "WHERE psn_id IS NULL AND similarity(title, :title) >= 0.6 "
-                "ORDER BY similarity(title, :title) DESC LIMIT 1"
+    """Fetch and match user's PSN library."""
+    internal_items = await build_preview_generic(db, user, online_id, psn_source)
+    return [
+        PSNPreviewItem(
+            game_id=i.game.id,
+            title=i.game.title,
+            cover_url=i.game.cover_url,
+            trophy_progress_pct=i.external.completion_pct,
+            hours_played=(
+                round(i.external.playtime_minutes / 60, 1)
+                if i.external.playtime_minutes is not None
+                else None
             ),
-            {"title": dto.title},
+            suggested_status=i.suggested_status,
+            already_in_library=i.already_in_library,
         )
-        row = result.fetchone()
-        if row:
-            game = await db.get(Game, row[0])
-            if game:
-                games_by_psn_id[dto.psn_id] = game
-                continue
-
-        # Create minimal Game entry
-        game = Game(title=dto.title, cover_url=dto.cover_url, psn_id=dto.psn_id)
-        db.add(game)
-        games_by_psn_id[dto.psn_id] = game
-
-    await db.flush()
-
-    existing_game_ids = set(
-        (await db.execute(
-            select(UserGame.game_id).where(UserGame.user_id == user.id)
-        )).scalars().all()
-    )
-
-    items: list[PSNPreviewItem] = []
-    for dto in dtos:
-        game = games_by_psn_id.get(dto.psn_id)
-        if game is None:
-            continue
-        items.append(PSNPreviewItem(
-            game_id=game.id,
-            title=game.title,
-            cover_url=game.cover_url,
-            trophy_progress_pct=dto.trophy_progress_pct,
-            hours_played=dto.hours_played,
-            suggested_status=_suggest_status(dto.trophy_progress_pct),
-            already_in_library=game.id in existing_game_ids,
-        ))
-
-    user.psn_online_id = online_id
-    user.last_psn_sync_at = datetime.now(UTC).replace(tzinfo=None)
-    await db.commit()
-    return items
+        for i in internal_items
+    ]
 
 
 async def confirm_import(
     db: AsyncSession, user: User, items: list[PSNConfirmItem]
 ) -> tuple[int, int]:
     """Bulk-insert UserGame entries. Returns (imported, skipped) counts."""
-    if not items:
-        return 0, 0
-
-    game_ids = [item.game_id for item in items]
-    existing = set(
-        (await db.execute(
-            select(UserGame.game_id)
-            .where(UserGame.user_id == user.id)
-            .where(UserGame.game_id.in_(game_ids))
-        )).scalars().all()
+    return await confirm_import_generic(
+        db, user, items, psn_source,
+        extract_hours_played=lambda item: item.hours_played,
     )
-
-    imported = 0
-    skipped = 0
-    for item in items:
-        if item.game_id in existing:
-            skipped += 1
-            continue
-        db.add(UserGame(
-            user_id=user.id,
-            game_id=item.game_id,
-            status=item.status,
-            user_rating=item.user_rating,
-            review=item.review,
-            hours_played=item.hours_played,
-            source="psn",
-        ))
-        imported += 1
-
-    user.last_psn_sync_at = datetime.now(UTC).replace(tzinfo=None)
-    await db.commit()
-    return imported, skipped
