@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { streamMessage } from '@/lib/sseClient'
-import type { ProposalSseData } from '@/lib/sseClient'
+import { animateMessageReveal } from '@/hooks/animateReveal'
+import { reduceMessage } from '@/hooks/streamReducer'
 import type { ChatIntent } from '@/lib/chatIntents'
 import type { MessageRead } from '@/types/conversation'
 import type { ProposalActionType, ProposalState } from '@/types/proposal'
@@ -29,16 +30,6 @@ export interface UIMessage {
   proposals?: UIProposal[]
   debugEvents?: DebugEvent[]
   citedGames?: CitedGame[]
-}
-
-function sseToUIProposal(data: ProposalSseData): UIProposal {
-  const { proposal_id, action_type, ...rest } = data
-  return {
-    id: proposal_id,
-    action_type: action_type as ProposalActionType,
-    payload: rest as Record<string, unknown>,
-    state: 'pending',
-  }
 }
 
 function toUIMessage(m: MessageRead, debugEvents?: Map<string, DebugEvent[]>): UIMessage {
@@ -88,146 +79,54 @@ export function useChatStream(conversationId: string, initialMessages: MessageRe
     abortRef.current = ac
     let toolSeen = false
     let contentAcc = ''
+    let assistantId = assistantMsg.id  // mutera après 'done' (swap vers id DB)
 
     try {
       for await (const event of streamMessage(conversationId, content, intent)) {
         if (ac.signal.aborted) break
 
+        // Maintenir l'état "out of React" pour le reducer (toolSeen, contentAcc).
+        // Le reducer reste pur ; le hook orchestre les transitions.
         if (event.type === 'token') {
           contentAcc += event.data
-          if (toolSeen) {
-            setMessages(prev =>
-              prev.map(m =>
-                m.id === assistantMsg.id ? { ...m, content: contentAcc, currentTool: null } : m,
-              ),
-            )
-          } else {
-            setMessages(prev =>
-              prev.map(m =>
-                m.id === assistantMsg.id ? { ...m, content: contentAcc } : m,
-              ),
-            )
-          }
         } else if (event.type === 'tool') {
           toolSeen = true
           contentAcc = ''
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id ? { ...m, currentTool: event.name, content: '' } : m,
-            ),
-          )
-        } else if (event.type === 'tool_call') {
-          const dbg: DebugEvent = {
-            kind: 'tool_call',
-            ts: Date.now(),
-            name: event.data.name,
-            args_preview: event.data.args_preview,
-            tool_call_id: event.data.tool_call_id,
-          }
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id
-                ? { ...m, debugEvents: [...(m.debugEvents ?? []), dbg] }
-                : m,
-            ),
-          )
-        } else if (event.type === 'tool_result') {
-          const dbg: DebugEvent = {
-            kind: 'tool_result',
-            ts: Date.now(),
-            name: event.data.name,
-            duration_ms: event.data.duration_ms,
-            result_preview: event.data.result_preview,
-            result_json: event.data.result_json ?? event.data.result_preview,
-            tool_call_id: event.data.tool_call_id,
-          }
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id
-                ? { ...m, debugEvents: [...(m.debugEvents ?? []), dbg] }
-                : m,
-            ),
-          )
-        } else if (event.type === 'proposal') {
-          const incomingProposal = sseToUIProposal(event.data)
-          const dbg: DebugEvent = {
-            kind: 'proposal',
-            ts: Date.now(),
-            proposal_id: event.data.proposal_id,
-            action_type: event.data.action_type,
-          }
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id
-                ? {
-                    ...m,
-                    proposals: [...(m.proposals ?? []), incomingProposal],
-                    debugEvents: [...(m.debugEvents ?? []), dbg],
-                  }
-                : m,
-            ),
-          )
-        } else if (event.type === 'cited_games') {
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id ? { ...m, citedGames: event.games } : m,
-            ),
-          )
-        } else if (event.type === 'done') {
+        }
+
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId ? reduceMessage(m, event, { toolSeen, contentAcc }) : m,
+          ),
+        )
+
+        if (event.type === 'done') {
           const finalContent = contentAcc
+          const newId = event.assistantMessageId
+
+          // Persiste les debugEvents accumulés sur la nouvelle id DB
           setMessages(prev => {
-            const updated = prev.map(m => {
-              if (m.id !== assistantMsg.id) return m
-              if (m.debugEvents?.length) {
-                debugEventsRef.current.set(event.assistantMessageId, m.debugEvents)
-              }
-              return { ...m, id: event.assistantMessageId, currentTool: null, animatingChars: 0 }
-            })
-            return updated
+            const target = prev.find(m => m.id === newId)
+            if (target?.debugEvents?.length) {
+              debugEventsRef.current.set(newId, target.debugEvents)
+            }
+            return prev
           })
 
-          // Animation typewriter : durée cible ~2s quelle que soit la longueur
-          const TICK_MS = 25
-          const totalTicks = 2000 / TICK_MS
-          const charsPerTick = Math.max(1, Math.ceil(finalContent.length / totalTicks))
-          for (let i = charsPerTick; i <= finalContent.length; i += charsPerTick) {
-            if (ac.signal.aborted) break
-            await new Promise<void>(r => setTimeout(r, TICK_MS))
-            if (ac.signal.aborted) break
-            const revealed = Math.min(i, finalContent.length)
-            setMessages(prev =>
-              prev.map(m =>
-                m.id === event.assistantMessageId ? { ...m, animatingChars: revealed } : m,
-              ),
-            )
-          }
+          assistantId = newId
+          await animateMessageReveal(setMessages, newId, finalContent, ac.signal)
 
           if (!ac.signal.aborted) {
-            setMessages(prev =>
-              prev.map(m =>
-                m.id === event.assistantMessageId
-                  ? { ...m, isStreaming: false, animatingChars: null }
-                  : m,
-              ),
-            )
             await qc.invalidateQueries({ queryKey: ['conversations', conversationId] })
             await qc.invalidateQueries({ queryKey: ['conversations'] })
           }
-        } else if (event.type === 'error') {
-          setMessages(prev =>
-            prev.map(m =>
-              m.id === assistantMsg.id
-                ? { ...m, content: `Erreur : ${event.message}`, isStreaming: false, currentTool: null }
-                : m,
-            ),
-          )
         }
       }
     } catch (err) {
       console.error('[useChatStream] SSE stream error:', err)
       setMessages(prev =>
         prev.map(m =>
-          m.id === assistantMsg.id
+          m.id === assistantId
             ? { ...m, content: 'Une erreur est survenue.', isStreaming: false }
             : m,
         ),
