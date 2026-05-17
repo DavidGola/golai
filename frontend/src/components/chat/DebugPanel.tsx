@@ -89,7 +89,7 @@ export default function DebugPanel({ events }: { events: DebugEvent[] }) {
           fontSize: 12,
           fontFamily: 'monospace',
           background: 'transparent',
-          border: '1px solid #2A2A2A',
+          border: '1px solid var(--color-hover)',
           borderRadius: 4,
           color: '#555',
           padding: '2px 8px',

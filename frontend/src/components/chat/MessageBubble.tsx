@@ -31,23 +31,23 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
       <div style={{
         maxWidth: isUser ? '72%' : '86%',
         borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-        border: isUser ? '1px solid rgba(16,53,192,0.35)' : '1px solid #2E2E2E',
-        background: isUser ? '#0D1E52' : '#1A1A1A',
-        color: '#EBEBEB',
+        border: isUser ? '1px solid var(--color-accent-shine)' : '1px solid var(--color-separator)',
+        background: isUser ? 'var(--color-user-bubble)' : 'var(--color-elevated)',
+        color: 'var(--color-content)',
         padding: '12px 16px',
         fontSize: 14, lineHeight: 1.6,
-        boxShadow: isUser ? '0 0 16px rgba(16,53,192,0.12)' : undefined,
+        boxShadow: isUser ? '0 0 16px var(--color-accent-dim)' : undefined,
       }}>
         {isUser ? (
           <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
         ) : message.currentTool ? (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            color: '#888888', fontStyle: 'italic',
+            color: 'var(--color-subtle)', fontStyle: 'italic',
           }}>
             <span style={{
               display: 'inline-block', width: 8, height: 8,
-              borderRadius: '50%', background: '#5B7EFF',
+              borderRadius: '50%', background: 'var(--color-accent-soft)',
               animation: 'blink 0.9s step-end infinite',
             }} />
             {toolLabel(message.currentTool)}
@@ -66,7 +66,7 @@ export default function MessageBubble({ message }: { message: UIMessage }) {
                 <span
                   style={{
                     display: 'inline-block', width: 2, height: 14,
-                    background: '#5B7EFF', borderRadius: 1,
+                    background: 'var(--color-accent-soft)', borderRadius: 1,
                     marginLeft: 2, verticalAlign: 'bottom', transform: 'translateY(2px)',
                     animation: 'blink 0.9s step-end infinite',
                   }}

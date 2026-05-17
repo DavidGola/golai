@@ -15,7 +15,7 @@ export function SentryTestButton() {
         padding: '10px 12px',
         borderRadius: 6,
         border: '1px solid #ef4444',
-        background: '#111111',
+        background: 'var(--color-base)',
         color: '#ffffff',
         cursor: 'pointer',
       }}

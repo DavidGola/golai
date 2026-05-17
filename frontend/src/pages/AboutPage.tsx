@@ -85,7 +85,7 @@ export default function AboutPage() {
           <div className="flex items-center gap-4">
             <div
               className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[14px] bg-accent font-display text-[22px] font-bold text-white"
-              style={{ boxShadow: '0 0 24px rgba(16,53,192,0.4)' }}
+              style={{ boxShadow: '0 0 24px var(--color-accent-shine)' }}
             >
               G
             </div>

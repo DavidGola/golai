@@ -83,24 +83,24 @@ export default function ChatPage() {
       {user && <SidebarLeft />}
 
       {/* Chat central */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#111111' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--color-base)' }}>
 
         {/* Header */}
         <div style={{
           height: 60, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 20px', borderBottom: '1px solid #2E2E2E', background: '#111111',
+          padding: '0 20px', borderBottom: '1px solid var(--color-separator)', background: 'var(--color-base)',
         }}>
           {/* Logo quand pas connecté */}
           {!user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
-                width: 28, height: 28, borderRadius: 6, background: '#1035C0',
+                width: 28, height: 28, borderRadius: 6, background: 'var(--color-accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: "'Orbitron', sans-serif", fontSize: 11, fontWeight: 700, color: '#fff',
-                boxShadow: '0 0 12px rgba(16,53,192,0.3)',
+                boxShadow: '0 0 12px var(--color-accent-glow)',
               }}>G</div>
-              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: '1.5px', color: '#EBEBEB' }}>
+              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: '1.5px', color: 'var(--color-content)' }}>
                 GOLAI
               </span>
             </div>
@@ -108,7 +108,7 @@ export default function ChatPage() {
 
           {/* Titre conv quand connecté */}
           {user && (
-            <span style={{ fontSize: 14, fontWeight: 500, color: '#EBEBEB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-content)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {title}
             </span>
           )}
@@ -121,9 +121,9 @@ export default function ChatPage() {
                 title="Bibliothèque"
                 style={{
                   width: 34, height: 34, borderRadius: 6,
-                  border: libraryOpen ? '1px solid rgba(16,53,192,0.3)' : '1px solid transparent',
-                  background: libraryOpen ? 'rgba(16,53,192,0.12)' : 'transparent',
-                  color: libraryOpen ? '#5B7EFF' : '#888888',
+                  border: libraryOpen ? '1px solid var(--color-accent-glow)' : '1px solid transparent',
+                  background: libraryOpen ? 'var(--color-accent-dim)' : 'transparent',
+                  color: libraryOpen ? 'var(--color-accent-soft)' : 'var(--color-subtle)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, cursor: 'pointer', transition: 'all 0.15s',
                 } as React.CSSProperties}
@@ -138,13 +138,13 @@ export default function ChatPage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <Link to="/login" style={{
                   padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-                  color: '#888888', border: '1px solid #2E2E2E', transition: 'all 0.15s',
+                  color: 'var(--color-subtle)', border: '1px solid var(--color-separator)', transition: 'all 0.15s',
                 }}>
                   Se connecter
                 </Link>
                 <Link to="/register" style={{
                   padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-                  color: '#fff', background: '#1035C0', boxShadow: '0 0 12px rgba(16,53,192,0.3)',
+                  color: '#fff', background: 'var(--color-accent)', boxShadow: '0 0 12px var(--color-accent-glow)',
                   transition: 'all 0.15s',
                 }}>
                   Créer un compte
@@ -161,19 +161,19 @@ export default function ChatPage() {
             user ? (
               <div style={{ display: 'flex', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center', padding: '0 24px' }}>
                 <div style={{
-                  width: 56, height: 56, borderRadius: 14, background: '#1035C0',
+                  width: 56, height: 56, borderRadius: 14, background: 'var(--color-accent)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontFamily: "'Orbitron', sans-serif", fontSize: 22, fontWeight: 700, color: '#fff',
-                  boxShadow: '0 0 24px rgba(16,53,192,0.4)',
+                  boxShadow: '0 0 24px var(--color-accent-shine)',
                 }}>G</div>
-                <p style={{ fontSize: 16, fontWeight: 500, color: '#EBEBEB' }}>Comment puis-je t'aider ?</p>
-                <p style={{ fontSize: 13, color: '#888888' }}>Pose-moi une question sur le jeu vidéo.</p>
+                <p style={{ fontSize: 16, fontWeight: 500, color: 'var(--color-content)' }}>Comment puis-je t'aider ?</p>
+                <p style={{ fontSize: 13, color: 'var(--color-subtle)' }}>Pose-moi une question sur le jeu vidéo.</p>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-5 px-6 text-center">
                 <div
                   className="flex h-[56px] w-[56px] flex-shrink-0 items-center justify-center rounded-[14px] bg-accent font-display text-[22px] font-bold text-white"
-                  style={{ boxShadow: '0 0 24px rgba(16,53,192,0.4)' }}
+                  style={{ boxShadow: '0 0 24px var(--color-accent-shine)' }}
                 >G</div>
                 <div className="flex flex-col gap-1">
                   <p className="font-display text-[15px] font-semibold tracking-[2px] text-primary">GOLAI</p>
@@ -192,7 +192,7 @@ export default function ChatPage() {
           )}
 
           {id && isLoading && (
-            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#888888', fontSize: 14 }}>
+            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--color-subtle)', fontSize: 14 }}>
               Chargement…
             </div>
           )}
@@ -230,20 +230,20 @@ export default function ChatPage() {
 function AnonInput() {
   return (
     <div style={{
-      flexShrink: 0, borderTop: '1px solid #2E2E2E', background: '#111111',
+      flexShrink: 0, borderTop: '1px solid var(--color-separator)', background: 'var(--color-base)',
       padding: '12px 20px 16px',
     }}>
       <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
         <div style={{
-          border: '1px solid #2E2E2E', borderRadius: 16, padding: '14px 18px',
-          color: '#444444', fontSize: 14, background: '#181818', marginBottom: 10,
+          border: '1px solid var(--color-separator)', borderRadius: 16, padding: '14px 18px',
+          color: 'var(--color-ghost)', fontSize: 14, background: 'var(--color-input-bg)', marginBottom: 10,
         }}>
           Parle de jeu vidéo…
         </div>
-        <p style={{ fontSize: 13, color: '#888888' }}>
-          <Link to="/login" style={{ color: '#5B7EFF', fontWeight: 500 }}>Connecte-toi</Link>
+        <p style={{ fontSize: 13, color: 'var(--color-subtle)' }}>
+          <Link to="/login" style={{ color: 'var(--color-accent-soft)', fontWeight: 500 }}>Connecte-toi</Link>
           {' '}ou{' '}
-          <Link to="/register" style={{ color: '#5B7EFF', fontWeight: 500 }}>crée un compte</Link>
+          <Link to="/register" style={{ color: 'var(--color-accent-soft)', fontWeight: 500 }}>crée un compte</Link>
           {' '}pour discuter avec GolAi.
         </p>
         <Footer />

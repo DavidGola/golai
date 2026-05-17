@@ -36,7 +36,7 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
 
   return (
     <div style={{
-      flexShrink: 0, borderTop: '1px solid #2E2E2E', background: '#111111',
+      flexShrink: 0, borderTop: '1px solid var(--color-separator)', background: 'var(--color-base)',
       padding: '12px 20px 16px',
     }}>
       <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto' }}>
@@ -52,11 +52,11 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
           style={{
             display: 'block', width: '100%', resize: 'none',
             borderRadius: 16,
-            border: '1px solid #2E2E2E',
-            background: '#181818',
+            border: '1px solid var(--color-separator)',
+            background: 'var(--color-input-bg)',
             padding: '14px 52px 14px 18px',
             fontSize: 14, lineHeight: 1.5,
-            color: '#EBEBEB',
+            color: 'var(--color-content)',
             outline: 'none',
             minHeight: 52, maxHeight: 160,
             boxSizing: 'border-box',
@@ -65,11 +65,11 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
             transition: 'border-color 0.15s, box-shadow 0.15s',
           }}
           onFocus={e => {
-            e.currentTarget.style.borderColor = 'rgba(16,53,192,0.5)'
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,53,192,0.08)'
+            e.currentTarget.style.borderColor = 'var(--color-accent-focus)'
+            e.currentTarget.style.boxShadow = '0 0 0 3px var(--color-accent-focus-soft)'
           }}
           onBlur={e => {
-            e.currentTarget.style.borderColor = '#2E2E2E'
+            e.currentTarget.style.borderColor = 'var(--color-separator)'
             e.currentTarget.style.boxShadow = 'none'
           }}
         />
@@ -81,10 +81,10 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
             width: 32, height: 32,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: '50%',
-            background: '#1035C0',
+            background: 'var(--color-accent)',
             color: '#fff',
             border: 'none', cursor: 'pointer',
-            boxShadow: '0 0 12px rgba(16,53,192,0.35)',
+            boxShadow: '0 0 12px var(--color-accent-shine)',
             transition: 'all 0.15s',
             opacity: (disabled || !value.trim()) ? 0.35 : 1,
           }}
@@ -102,7 +102,7 @@ export default function ChatInput({ onSend, disabled, model }: Props) {
         justifyContent: 'center',
         gap: '4px 10px',
         fontSize: 11,
-        color: '#444444',
+        color: 'var(--color-ghost)',
       }}>
         {model && <span>Modèle : {model}</span>}
         <span>Entrée pour envoyer · Maj+Entrée pour un saut de ligne</span>

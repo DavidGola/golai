@@ -145,7 +145,7 @@ export default function LibraryPanel({ onClose }: Props) {
             {!search && activeFiltersCount === 0 && (
               <button
                 onClick={() => setAddOpen(true)}
-                className="mt-1 flex items-center gap-1.5 rounded-[8px] bg-accent px-4 py-2 text-[12px] font-semibold text-white shadow-[0_0_12px_rgba(16,53,192,0.3)] transition-colors hover:bg-accent/90"
+                className="mt-1 flex items-center gap-1.5 rounded-[8px] bg-accent px-4 py-2 text-[12px] font-semibold text-white shadow-[0_0_12px_var(--color-accent-glow)] transition-colors hover:bg-accent/90"
               >
                 <span className="text-[14px] leading-none">＋</span>
                 Ajouter ton premier jeu
@@ -165,7 +165,7 @@ export default function LibraryPanel({ onClose }: Props) {
         <div className="flex-shrink-0 border-t border-border bg-panel px-3 py-2.5">
           <button
             onClick={() => setAddOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-[8px] border border-accent/35 bg-accent-dim py-2 text-[12px] font-semibold text-accent-soft transition-colors hover:border-accent/55 hover:bg-[rgba(16,53,192,0.2)] hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-[8px] border border-accent/35 bg-accent-dim py-2 text-[12px] font-semibold text-accent-soft transition-colors hover:border-accent/55 hover:bg-accent-tint hover:text-white"
           >
             <span className="text-[14px] leading-none">＋</span>
             Ajouter un jeu

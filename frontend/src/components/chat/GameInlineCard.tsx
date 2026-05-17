@@ -29,7 +29,7 @@ export default function GameInlineCard({ game }: Props) {
   return (
     <div style={{
       borderRadius: 8,
-      border: '1px solid #2E2E2E',
+      border: '1px solid var(--color-separator)',
       overflow: 'hidden',
       background: '#141414',
       display: 'flex',
@@ -65,7 +65,7 @@ export default function GameInlineCard({ game }: Props) {
           fontSize: 12,
           fontFamily: 'Orbitron, sans-serif',
           fontWeight: 600,
-          color: '#EBEBEB',
+          color: 'var(--color-content)',
           lineHeight: 1.3,
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -79,7 +79,7 @@ export default function GameInlineCard({ game }: Props) {
           <p style={{
             margin: 0,
             fontSize: 12,
-            color: '#666666',
+            color: 'var(--color-faint)',
             lineHeight: 1.3,
             display: '-webkit-box',
             WebkitLineClamp: 2,

@@ -4,9 +4,8 @@ import axios from 'axios'
 import { searchGames } from '@/api/games'
 import { useAddUserGame } from '@/hooks/useUserGames'
 import type { GameListItem, UserGameStatus } from '@/types/userGame'
-import SteamImportPanel from './SteamImportPanel'
-import PSNImportPanel from './PSNImportPanel'
-import XboxImportPanel from './XboxImportPanel'
+import LibraryImportPanel from './LibraryImportPanel'
+import { steamSource, psnSource, xboxSource } from './libraryImportSources'
 
 const STATUS_OPTIONS: { value: UserGameStatus; label: string; activeClass: string }[] = [
   { value: 'completed',   label: 'Terminé',   activeClass: 'bg-[rgba(40,200,100,0.12)] text-[#5DE89E] border-[rgba(40,200,100,0.25)]' },
@@ -176,15 +175,15 @@ export default function AddGameModal({ open, onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-6 py-5">
 
           {tab === 'steam' && (
-            <SteamImportPanel onDone={onClose} />
+            <LibraryImportPanel source={steamSource} onDone={onClose} />
           )}
 
           {tab === 'psn' && (
-            <PSNImportPanel onDone={onClose} />
+            <LibraryImportPanel source={psnSource} onDone={onClose} />
           )}
 
           {tab === 'xbox' && (
-            <XboxImportPanel onDone={onClose} />
+            <LibraryImportPanel source={xboxSource} onDone={onClose} />
           )}
 
           {tab === 'manual' && (<>

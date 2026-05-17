@@ -51,7 +51,7 @@ export default function SidebarLeft() {
       <div className="flex items-center gap-3 px-5 py-4">
         <div
           className="flex h-[28px] w-[28px] flex-shrink-0 items-center justify-center rounded-[7px] bg-accent font-display text-[11px] font-bold text-white"
-          style={{ boxShadow: '0 0 14px rgba(16,53,192,0.4)' }}
+          style={{ boxShadow: '0 0 14px var(--color-accent-shine)' }}
         >
           G
         </div>
@@ -70,7 +70,7 @@ export default function SidebarLeft() {
         <button
           onClick={() => navigate('/chat', { state: { pendingCta: 'library_recommend' } })}
           className="flex w-full items-center gap-2.5 rounded-[8px] bg-accent px-4 py-3 text-[13px] font-medium text-white transition-all hover:opacity-90"
-          style={{ boxShadow: '0 0 12px rgba(16,53,192,0.3)' }}
+          style={{ boxShadow: '0 0 12px var(--color-accent-glow)' }}
         >
           <span className="text-[14px] leading-none">✦</span>
           Recommande-moi 5 jeux
@@ -110,7 +110,7 @@ export default function SidebarLeft() {
                   className={cn(
                     'relative my-0.5 block w-full rounded-[6px] px-3.5 py-3 text-left transition-colors',
                     isActive
-                      ? 'bg-[rgba(16,53,192,0.18)] ring-1 ring-inset ring-accent/25'
+                      ? 'bg-accent-tint ring-1 ring-inset ring-accent/25'
                       : 'hover:bg-hover',
                   )}
                 >
@@ -141,7 +141,7 @@ export default function SidebarLeft() {
         >
           <div
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #1035C0, #5B7EFF)' }}
+            style={{ background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-soft))' }}
           >
             {initial}
           </div>

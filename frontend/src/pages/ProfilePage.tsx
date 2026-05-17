@@ -58,7 +58,7 @@ export default function ProfilePage() {
           <div className="mb-8 flex items-center gap-4">
             <div
               className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-xl font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #1035C0, #5B7EFF)' }}
+              style={{ background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-soft))' }}
             >
               {initial}
             </div>

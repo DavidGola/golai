@@ -7,10 +7,14 @@
   --color-hover:        #2A2A2A;
   --color-input-bg:     #181818;
 
-  --color-accent:       #1035C0;
-  --color-accent-soft:  #5B7EFF;
-  --color-accent-glow:  rgba(16, 53, 192, 0.3);
-  --color-accent-dim:   rgba(16, 53, 192, 0.12);
+  --color-accent:            #1035C0;
+  --color-accent-soft:       #5B7EFF;
+  --color-accent-shine:      rgba(16, 53, 192, 0.4);   /* big-logo glow, hover shadow */
+  --color-accent-glow:       rgba(16, 53, 192, 0.3);   /* small shadow, button highlight */
+  --color-accent-tint:       rgba(16, 53, 192, 0.18);  /* active chip bg, ring */
+  --color-accent-dim:        rgba(16, 53, 192, 0.12);  /* dim active bg */
+  --color-accent-focus:      rgba(16, 53, 192, 0.5);   /* input border on focus */
+  --color-accent-focus-soft: rgba(16, 53, 192, 0.08);  /* input ring outer on focus */
 
   --color-content:      #EBEBEB;
   --color-subtle:       #888888;
@@ -18,8 +22,15 @@
 
   --color-separator:    #2E2E2E;
 
+  --color-accent-hover:      #1E45D0;                  /* primary button hover lighten */
+
   --color-danger:       #FF3B5C;
   --color-danger-dim:   rgba(255, 59, 92, 0.12);
+  --color-danger-ring:  rgba(255, 59, 92, 0.25);
+
+  --color-success:      #4ade80;
+  --color-success-dim:  rgba(34, 197, 94, 0.12);
+  --color-success-ring: rgba(34, 197, 94, 0.25);
 
   --color-user-bubble:  #0D1E52;
   --color-ai-bubble:    #1A1A1A;
@@ -40,8 +51,8 @@
     height: 100%;
     font-family: 'Outfit', system-ui, sans-serif;
     font-size: 15px;
-    color: #EBEBEB;
-    background: #111111;
+    color: var(--color-content);
+    background: var(--color-base);
     -webkit-font-smoothing: antialiased;
   }
   #root { height: 100%; }
@@ -55,24 +66,24 @@
 /* ─── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2E2E2E; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #444444; }
+::-webkit-scrollbar-thumb { background: var(--color-separator); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ghost); }
 
 /* ─── Prose (react-markdown) ─────────────────────────────────── */
-.prose { color: #EBEBEB; line-height: 1.65; }
+.prose { color: var(--color-content); line-height: 1.65; }
 .prose p { margin: 0 0 0.75em; }
 .prose p:last-child { margin-bottom: 0; }
-.prose code { background: #222222; border-radius: 4px; padding: 2px 6px; font-size: 13px; color: #EBEBEB; }
-.prose pre { background: #1A1A1A; border: 1px solid #2E2E2E; border-radius: 8px; padding: 12px 16px; overflow-x: auto; margin: 0.75em 0; }
+.prose code { background: var(--color-panel); border-radius: 4px; padding: 2px 6px; font-size: 13px; color: var(--color-content); }
+.prose pre { background: var(--color-elevated); border: 1px solid var(--color-separator); border-radius: 8px; padding: 12px 16px; overflow-x: auto; margin: 0.75em 0; }
 .prose pre code { background: none; padding: 0; }
-.prose a { color: #5B7EFF; }
-.prose strong { color: #EBEBEB; font-weight: 600; }
+.prose a { color: var(--color-accent-soft); }
+.prose strong { color: var(--color-content); font-weight: 600; }
 .prose ul, .prose ol { padding-left: 1.25em; margin: 0.5em 0; }
 .prose li { margin-bottom: 0.25em; }
-.prose h1 { font-size: 1.4em; font-weight: 700; margin: 0 0 0.5em; color: #EBEBEB; }
-.prose h2 { font-size: 1.1em; font-weight: 600; margin: 1.5em 0 0.4em; color: #EBEBEB; border-bottom: 1px solid #2E2E2E; padding-bottom: 0.3em; }
-.prose h3, .prose h4 { font-weight: 600; margin: 1em 0 0.25em; color: #EBEBEB; }
-.prose hr { border: none; border-top: 1px solid #2E2E2E; margin: 1.5em 0; }
+.prose h1 { font-size: 1.4em; font-weight: 700; margin: 0 0 0.5em; color: var(--color-content); }
+.prose h2 { font-size: 1.1em; font-weight: 600; margin: 1.5em 0 0.4em; color: var(--color-content); border-bottom: 1px solid var(--color-separator); padding-bottom: 0.3em; }
+.prose h3, .prose h4 { font-weight: 600; margin: 1em 0 0.25em; color: var(--color-content); }
+.prose hr { border: none; border-top: 1px solid var(--color-separator); margin: 1.5em 0; }
 .prose table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 13px; }
-.prose th { text-align: left; padding: 6px 10px; background: #1A1A1A; border: 1px solid #2E2E2E; color: #EBEBEB; font-weight: 600; }
-.prose td { padding: 6px 10px; border: 1px solid #2E2E2E; color: #888888; vertical-align: top; }
+.prose th { text-align: left; padding: 6px 10px; background: var(--color-elevated); border: 1px solid var(--color-separator); color: var(--color-content); font-weight: 600; }
+.prose td { padding: 6px 10px; border: 1px solid var(--color-separator); color: var(--color-subtle); vertical-align: top; }

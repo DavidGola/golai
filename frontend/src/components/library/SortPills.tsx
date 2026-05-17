@@ -50,7 +50,7 @@ export default function SortPills({ value, dir, onChange }: Props) {
       <button
         ref={buttonRef}
         onClick={handleOpen}
-        className="flex items-center gap-1 rounded-full border border-accent/35 bg-[rgba(16,53,192,0.18)] px-2.5 py-1 text-[11px] font-medium text-accent-soft ring-1 ring-accent/30 transition-all"
+        className="flex items-center gap-1 rounded-full border border-accent/35 bg-accent-tint px-2.5 py-1 text-[11px] font-medium text-accent-soft ring-1 ring-accent/30 transition-all"
       >
         {SORT_LABELS[value]}
         <span className="text-[10px] opacity-70">{dir === 'desc' ? '↓' : '↑'}</span>

@@ -14,10 +14,10 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', background: '#111111' }}>
+      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', background: 'var(--color-base)' }}>
         <div style={{
           width: 24, height: 24,
-          border: '2px solid #1035C0',
+          border: '2px solid var(--color-accent)',
           borderTopColor: 'transparent',
           borderRadius: '50%',
           animation: 'spin 0.8s linear infinite',

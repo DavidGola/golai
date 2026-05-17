@@ -101,7 +101,7 @@ export default function ProposalCard({
   return (
     <div style={{
       marginTop: 10,
-      border: '1px solid #2E2E2E',
+      border: '1px solid var(--color-separator)',
       borderRadius: 10,
       background: '#141414',
       overflow: 'hidden',
@@ -124,7 +124,7 @@ export default function ProposalCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{
             fontSize: 13, lineHeight: 1,
-            color: isDelete ? '#FF5A5A' : '#5B7EFF',
+            color: isDelete ? '#FF5A5A' : 'var(--color-accent-soft)',
             fontWeight: 700,
           }}>
             {icon}
@@ -144,7 +144,7 @@ export default function ProposalCard({
                 borderRadius: 6,
                 border: 'none',
                 background: isDelete ? '#7A1A1A' : '#1A3A7A',
-                color: '#EBEBEB',
+                color: 'var(--color-content)',
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: loading ? 'default' : 'pointer',

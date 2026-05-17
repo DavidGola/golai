@@ -125,7 +125,7 @@ export default function GameCard({ userGame, detailed, onMenu }: Props) {
                 className="h-full rounded-full"
                 style={{
                   width: `${(userGame.user_rating / 10) * 100}%`,
-                  background: 'linear-gradient(to right, #1035C0, #F5C842)',
+                  background: 'linear-gradient(to right, var(--color-accent), #F5C842)',
                 }}
               />
             </div>
