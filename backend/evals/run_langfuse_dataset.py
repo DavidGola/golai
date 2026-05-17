@@ -219,7 +219,11 @@ async def create_eval_fixture(db: AsyncSession, item: dict[str, Any]) -> User:
             steam_score=game_data.get("steam_score"),
             steam_total_reviews=game_data.get("steam_total_reviews"),
             metacritic_score=game_data.get("metacritic_score"),
-            opencritic_score=game_data.get("opencritic_score"),
+            opencritic_signals=(
+                {"score": game_data["opencritic_score"]}
+                if game_data.get("opencritic_score") is not None
+                else None
+            ),
             igdb_rating=game_data.get("igdb_rating"),
         )
         game.genres = [

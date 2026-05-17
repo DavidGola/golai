@@ -14,7 +14,7 @@ _COLUMNS = """
         g.hltb_main,
         g.igdb_rating,
         g.metacritic_score,
-        g.opencritic_score,
+        (g.opencritic_signals->>'score')::int AS opencritic_score,
         g.steam_score,
         g.steam_total_reviews,
         g.steam_signals,

@@ -51,9 +51,9 @@ class Game(Base):
     hltb_extra: Mapped[float | None] = mapped_column()
     hltb_completionist: Mapped[float | None] = mapped_column()
 
-    # OpenCritic
-    opencritic_score: Mapped[int | None] = mapped_column(SmallInteger)
-    opencritic_excerpts: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    # OpenCritic — JSONB consolidé (ADR-0018). Lecture via @property
+    # opencritic_score / opencritic_excerpts pour compat Pydantic from_attributes.
+    opencritic_signals: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # URLs stores (steam, epic, gog, xbox, playstation, nintendo)
     store_urls: Mapped[dict[str, str] | None] = mapped_column(JSONB, nullable=True)
@@ -71,6 +71,17 @@ class Game(Base):
 
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now(), onupdate=func.now())
+
+    # Facades de compat : Pydantic schemas (from_attributes=True) lisent
+    # encore .opencritic_score et .opencritic_excerpts ; le frontend consomme
+    # ces deux champs flats. La colonne sous-jacente est désormais JSONB.
+    @property
+    def opencritic_score(self) -> int | None:
+        return (self.opencritic_signals or {}).get("score")
+
+    @property
+    def opencritic_excerpts(self) -> list[str] | None:
+        return (self.opencritic_signals or {}).get("excerpts")
 
     # Relationships
     genres: Mapped[list["Genre"]] = relationship(secondary=games_genres, back_populates="games")
