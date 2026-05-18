@@ -66,7 +66,7 @@ async def test_psn_preview_npsso_expired_returns_503(client, user_headers):
 
 async def test_psn_preview_happy_path(client, user_headers):
     items = [_preview_item()]
-    with patch("app.routers.user_games.psn_service.build_preview", return_value=items):
+    with patch("app.routers.user_games.psn_service.build_preview", return_value=(items, "VaultTec")):
         r = await client.post(
             "/users/me/games/psn/preview",
             json={"online_id": "VaultTec"},
@@ -90,9 +90,12 @@ async def test_psn_import_happy_path(client, user_headers):
     with patch("app.routers.user_games.psn_service.confirm_import", return_value=(2, 0)) as mock:
         r = await client.post(
             "/users/me/games/psn/import",
-            json={"items": [
-                {"game_id": game_id, "status": "completed", "user_rating": 9, "review": None, "hours_played": 20.0},
-            ]},
+            json={
+                "online_id": "VaultTec",
+                "items": [
+                    {"game_id": game_id, "status": "completed", "user_rating": 9, "review": None, "hours_played": 20.0},
+                ],
+            },
             headers=user_headers,
         )
     assert r.status_code == 200
@@ -107,7 +110,10 @@ async def test_psn_import_dedup_second_call_returns_skipped(client, user_headers
     with patch("app.routers.user_games.psn_service.confirm_import", return_value=(0, 1)):
         r = await client.post(
             "/users/me/games/psn/import",
-            json={"items": [{"game_id": game_id, "status": None, "user_rating": None, "review": None, "hours_played": None}]},
+            json={
+                "online_id": "VaultTec",
+                "items": [{"game_id": game_id, "status": None, "user_rating": None, "review": None, "hours_played": None}],
+            },
             headers=user_headers,
         )
     assert r.status_code == 200

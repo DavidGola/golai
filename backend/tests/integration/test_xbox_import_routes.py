@@ -97,7 +97,7 @@ async def test_xbox_preview_quota_exceeded_returns_429(client, user_headers):
 
 
 async def test_xbox_preview_happy_path(client, user_headers):
-    with patch("app.routers.user_games.xbox_service.build_preview", return_value=[_preview_item()]):
+    with patch("app.routers.user_games.xbox_service.build_preview", return_value=([_preview_item()], "MajorNelson")):
         r = await client.post(
             "/users/me/games/xbox/preview",
             json={"gamertag": "MajorNelson"},
@@ -120,7 +120,10 @@ async def test_xbox_import_happy_path(client, user_headers):
     with patch("app.routers.user_games.xbox_service.confirm_import", return_value=(3, 0)):
         r = await client.post(
             "/users/me/games/xbox/import",
-            json={"items": [{"game_id": game_id, "status": "completed", "user_rating": 9, "review": None}]},
+            json={
+                "gamertag": "MajorNelson",
+                "items": [{"game_id": game_id, "status": "completed", "user_rating": 9, "review": None}],
+            },
             headers=user_headers,
         )
     assert r.status_code == 200
