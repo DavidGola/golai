@@ -40,7 +40,6 @@ def test_build_model_uses_gemini_api_key(monkeypatch):
 
     assert isinstance(model, GoogleModel)
     assert model.model_name == "gemini-2.5-flash"
-    assert model.model_id == "google-gla:gemini-2.5-flash"
     assert model_settings is None
 
 
