@@ -73,13 +73,13 @@ async def steam_preview(
     current_user: User = Depends(current_active_user),
 ):
     try:
-        items = await steam_service.build_preview(db, current_user, payload.profile)
+        items, resolved_steam_id = await steam_service.build_preview(db, current_user, payload.profile)
     except ValueError as e:
         code = str(e)
         if code == "steam_invalid_input":
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=code)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=code)
-    return SteamPreviewResponse(items=items)
+    return SteamPreviewResponse(items=items, resolved_steam_id=resolved_steam_id)
 
 
 @router.post("/steam/import", response_model=SteamConfirmResponse)
@@ -88,7 +88,10 @@ async def steam_import(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user),
 ):
-    imported, skipped = await steam_service.confirm_import(db, current_user, payload.items)
+    try:
+        imported, skipped = await steam_service.confirm_import(db, current_user, payload.items, payload.steam_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     return SteamConfirmResponse(imported=imported, skipped=skipped)
 
 
@@ -99,7 +102,7 @@ async def psn_preview(
     current_user: User = Depends(current_active_user),
 ):
     try:
-        items = await psn_service.build_preview(db, current_user, payload.online_id)
+        items, _ = await psn_service.build_preview(db, current_user, payload.online_id)
     except ValueError as e:
         code = str(e)
         if code in ("psn_npsso_invalid", "psn_api_unavailable"):
@@ -114,7 +117,10 @@ async def psn_import(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user),
 ):
-    imported, skipped = await psn_service.confirm_import(db, current_user, payload.items)
+    try:
+        imported, skipped = await psn_service.confirm_import(db, current_user, payload.items, payload.online_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     return PSNConfirmResponse(imported=imported, skipped=skipped)
 
 
@@ -125,7 +131,7 @@ async def xbox_preview(
     current_user: User = Depends(current_active_user),
 ):
     try:
-        items = await xbox_service.build_preview(db, current_user, payload.gamertag)
+        items, _ = await xbox_service.build_preview(db, current_user, payload.gamertag)
     except ValueError as e:
         code = str(e)
         if code == "xbox_invalid_gamertag":
@@ -144,5 +150,8 @@ async def xbox_import(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(current_active_user),
 ):
-    imported, skipped = await xbox_service.confirm_import(db, current_user, payload.items)
+    try:
+        imported, skipped = await xbox_service.confirm_import(db, current_user, payload.items, payload.gamertag)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     return XboxConfirmResponse(imported=imported, skipped=skipped)

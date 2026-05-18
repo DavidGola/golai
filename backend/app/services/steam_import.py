@@ -65,10 +65,10 @@ steam_source = SteamSource()
 
 async def build_preview(
     db: AsyncSession, user: User, raw_input: str
-) -> list[SteamPreviewItem]:
-    """Fetch and match the user's Steam library."""
-    internal_items = await build_preview_generic(db, user, raw_input, steam_source)
-    return [
+) -> tuple[list[SteamPreviewItem], str]:
+    """Fetch and match the user's Steam library. Returns (items, resolved_steam_id)."""
+    internal_items, storage_value = await build_preview_generic(db, user, raw_input, steam_source)
+    items = [
         SteamPreviewItem(
             game_id=i.game.id,
             title=i.game.title,
@@ -83,13 +83,15 @@ async def build_preview(
         )
         for i in internal_items
     ]
+    return items, storage_value
 
 
 async def confirm_import(
-    db: AsyncSession, user: User, items: list[SteamConfirmItem]
+    db: AsyncSession, user: User, items: list[SteamConfirmItem], steam_id: str
 ) -> tuple[int, int]:
     """Bulk-insert UserGame entries. Returns (imported, skipped) counts."""
     return await confirm_import_generic(
         db, user, items, steam_source,
         extract_hours_played=lambda item: item.hours_on_record,
+        account_value=steam_id,
     )

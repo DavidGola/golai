@@ -55,10 +55,10 @@ psn_source = PSNSource()
 
 async def build_preview(
     db: AsyncSession, user: User, online_id: str
-) -> list[PSNPreviewItem]:
-    """Fetch and match user's PSN library."""
-    internal_items = await build_preview_generic(db, user, online_id, psn_source)
-    return [
+) -> tuple[list[PSNPreviewItem], str]:
+    """Fetch and match user's PSN library. Returns (items, online_id)."""
+    internal_items, storage_value = await build_preview_generic(db, user, online_id, psn_source)
+    items = [
         PSNPreviewItem(
             game_id=i.game.id,
             title=i.game.title,
@@ -74,13 +74,15 @@ async def build_preview(
         )
         for i in internal_items
     ]
+    return items, storage_value
 
 
 async def confirm_import(
-    db: AsyncSession, user: User, items: list[PSNConfirmItem]
+    db: AsyncSession, user: User, items: list[PSNConfirmItem], online_id: str
 ) -> tuple[int, int]:
     """Bulk-insert UserGame entries. Returns (imported, skipped) counts."""
     return await confirm_import_generic(
         db, user, items, psn_source,
         extract_hours_played=lambda item: item.hours_played,
+        account_value=online_id,
     )

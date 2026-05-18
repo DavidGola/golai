@@ -56,10 +56,10 @@ xbox_source = XboxSource()
 
 async def build_preview(
     db: AsyncSession, user: User, gamertag: str
-) -> list[XboxPreviewItem]:
-    """Fetch and match user's Xbox library."""
-    internal_items = await build_preview_generic(db, user, gamertag, xbox_source)
-    return [
+) -> tuple[list[XboxPreviewItem], str]:
+    """Fetch and match user's Xbox library. Returns (items, gamertag)."""
+    internal_items, storage_value = await build_preview_generic(db, user, gamertag, xbox_source)
+    items = [
         XboxPreviewItem(
             game_id=i.game.id,
             title=i.game.title,
@@ -70,13 +70,15 @@ async def build_preview(
         )
         for i in internal_items
     ]
+    return items, storage_value
 
 
 async def confirm_import(
-    db: AsyncSession, user: User, items: list[XboxConfirmItem]
+    db: AsyncSession, user: User, items: list[XboxConfirmItem], gamertag: str
 ) -> tuple[int, int]:
     """Bulk-insert UserGame entries. Returns (imported, skipped) counts."""
     return await confirm_import_generic(
         db, user, items, xbox_source,
-        extract_hours_played=lambda item: None,  # Xbox API ne fournit pas le playtime
+        extract_hours_played=lambda item: None,
+        account_value=gamertag,
     )

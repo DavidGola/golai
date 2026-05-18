@@ -20,13 +20,19 @@ export type SteamConfirmItem = {
   hours_on_record: number | null
 }
 
-export async function steamPreview(profile: string): Promise<SteamPreviewItem[]> {
+export const SteamPreviewResultSchema = z.object({
+  items: z.array(SteamPreviewItemSchema),
+  resolved_steam_id: z.string(),
+})
+export type SteamPreviewResult = z.infer<typeof SteamPreviewResultSchema>
+
+export async function steamPreview(profile: string): Promise<SteamPreviewResult> {
   const res = await apiClient.post<unknown>('/users/me/games/steam/preview', { profile })
-  return z.object({ items: z.array(SteamPreviewItemSchema) }).parse(res.data).items
+  return SteamPreviewResultSchema.parse(res.data)
 }
 
-export async function steamImport(items: SteamConfirmItem[]): Promise<{ imported: number; skipped: number }> {
-  const res = await apiClient.post<unknown>('/users/me/games/steam/import', { items })
+export async function steamImport({ items, steam_id }: { items: SteamConfirmItem[]; steam_id: string }): Promise<{ imported: number; skipped: number }> {
+  const res = await apiClient.post<unknown>('/users/me/games/steam/import', { items, steam_id })
   return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
 }
 
@@ -89,8 +95,8 @@ export async function psnPreview(online_id: string): Promise<PSNPreviewItem[]> {
   return z.object({ items: z.array(PSNPreviewItemSchema) }).parse(res.data).items
 }
 
-export async function psnImport(items: PSNConfirmItem[]): Promise<{ imported: number; skipped: number }> {
-  const res = await apiClient.post<unknown>('/users/me/games/psn/import', { items })
+export async function psnImport({ items, online_id }: { items: PSNConfirmItem[]; online_id: string }): Promise<{ imported: number; skipped: number }> {
+  const res = await apiClient.post<unknown>('/users/me/games/psn/import', { items, online_id })
   return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
 }
 
@@ -116,7 +122,7 @@ export async function xboxPreview(gamertag: string): Promise<XboxPreviewItem[]> 
   return z.object({ items: z.array(XboxPreviewItemSchema) }).parse(res.data).items
 }
 
-export async function xboxImport(items: XboxConfirmItem[]): Promise<{ imported: number; skipped: number }> {
-  const res = await apiClient.post<unknown>('/users/me/games/xbox/import', { items })
+export async function xboxImport({ items, gamertag }: { items: XboxConfirmItem[]; gamertag: string }): Promise<{ imported: number; skipped: number }> {
+  const res = await apiClient.post<unknown>('/users/me/games/xbox/import', { items, gamertag })
   return z.object({ imported: z.number(), skipped: z.number() }).parse(res.data)
 }

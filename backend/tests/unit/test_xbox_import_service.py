@@ -27,14 +27,15 @@ def _dto(
 
 
 @pytest.mark.asyncio
-async def test_build_preview_empty_library_updates_sync_at(db_session, user_a):
+async def test_build_preview_empty_library_returns_empty_tuple(db_session, user_a):
     with patch("app.services.xbox_import.xbox.fetch_library", return_value=[]):
         with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-123"):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, gamertag = await build_preview(db_session, user_a, "MajorNelson")
 
-    assert result == []
-    assert user_a.last_xbox_sync_at is not None
-    assert user_a.xbox_gamertag == "MajorNelson"
+    assert items == []
+    assert gamertag == "MajorNelson"
+    assert user_a.xbox_gamertag is None
+    assert user_a.last_xbox_sync_at is None
 
 
 @pytest.mark.asyncio
@@ -45,12 +46,12 @@ async def test_build_preview_xbox_id_exact_match(db_session, user_a):
 
     with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-1"):
         with patch("app.services.xbox_import.xbox.fetch_library", return_value=[_dto()]):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, _ = await build_preview(db_session, user_a, "MajorNelson")
 
-    assert len(result) == 1
-    assert result[0].game_id == game.id
-    assert result[0].already_in_library is False
-    assert result[0].achievement_progress_pct == 75
+    assert len(items) == 1
+    assert items[0].game_id == game.id
+    assert items[0].already_in_library is False
+    assert items[0].achievement_progress_pct == 75
 
 
 @pytest.mark.asyncio
@@ -61,19 +62,19 @@ async def test_build_preview_fuzzy_title_match(db_session, user_a):
 
     with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-1"):
         with patch("app.services.xbox_import.xbox.fetch_library", return_value=[_dto()]):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, _ = await build_preview(db_session, user_a, "MajorNelson")
 
-    assert len(result) == 1
-    assert result[0].game_id == game.id
+    assert len(items) == 1
+    assert items[0].game_id == game.id
 
 
 @pytest.mark.asyncio
 async def test_build_preview_new_game_created(db_session, user_a):
     with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-1"):
         with patch("app.services.xbox_import.xbox.fetch_library", return_value=[_dto(title="Brand New Xbox Game")]):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, _ = await build_preview(db_session, user_a, "MajorNelson")
 
-    assert len(result) == 1
+    assert len(items) == 1
     from sqlalchemy import select as sa_select
     game = (await db_session.execute(
         sa_select(Game).where(Game.xbox_id == "1095224633")
@@ -91,9 +92,9 @@ async def test_build_preview_already_in_library(db_session, user_a):
 
     with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-1"):
         with patch("app.services.xbox_import.xbox.fetch_library", return_value=[_dto()]):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, _ = await build_preview(db_session, user_a, "MajorNelson")
 
-    assert result[0].already_in_library is True
+    assert items[0].already_in_library is True
 
 
 @pytest.mark.asyncio
@@ -105,32 +106,33 @@ async def test_build_preview_suggested_status_from_achievement_pct(db_session, u
     ]
     with patch("app.services.xbox_import.xbox.resolve_gamertag", return_value="xuid-1"):
         with patch("app.services.xbox_import.xbox.fetch_library", return_value=dtos):
-            result = await build_preview(db_session, user_a, "MajorNelson")
+            items, _ = await build_preview(db_session, user_a, "MajorNelson")
 
-    by_title = {item.title: item for item in result}
+    by_title = {item.title: item for item in items}
     assert by_title["Game100"].suggested_status == UserGameStatus.completed
     assert by_title["Game50"].suggested_status == UserGameStatus.todo
     assert by_title["Game0"].suggested_status == UserGameStatus.not_started
 
 
 @pytest.mark.asyncio
-async def test_confirm_import_inserts_with_xbox_source(db_session, user_a):
+async def test_confirm_import_inserts_and_saves_account(db_session, user_a):
     game = Game(title="Halo Infinite", xbox_id="1095224633")
     db_session.add(game)
     await db_session.flush()
 
     item = XboxConfirmItem(game_id=game.id, status=UserGameStatus.completed, user_rating=9, review=None)
-    imported, skipped = await confirm_import(db_session, user_a, [item])
+    imported, skipped = await confirm_import(db_session, user_a, [item], "MajorNelson")
 
     assert imported == 1
     assert skipped == 0
+    assert user_a.xbox_gamertag == "MajorNelson"
+    assert user_a.last_xbox_sync_at is not None
 
     from sqlalchemy import select as sa_select
     ug = (await db_session.execute(
         sa_select(UserGame).where(UserGame.user_id == user_a.id).where(UserGame.game_id == game.id)
     )).scalar_one()
     assert ug.source == "xbox"
-    assert user_a.last_xbox_sync_at is not None
 
 
 @pytest.mark.asyncio
@@ -140,8 +142,8 @@ async def test_confirm_import_idempotent(db_session, user_a):
     await db_session.flush()
 
     item = XboxConfirmItem(game_id=game.id, status=None, user_rating=None, review=None)
-    imported1, skipped1 = await confirm_import(db_session, user_a, [item])
-    imported2, skipped2 = await confirm_import(db_session, user_a, [item])
+    imported1, skipped1 = await confirm_import(db_session, user_a, [item], "MajorNelson")
+    imported2, skipped2 = await confirm_import(db_session, user_a, [item], "MajorNelson")
 
     assert imported1 == 1 and skipped1 == 0
     assert imported2 == 0 and skipped2 == 1

@@ -11,7 +11,7 @@ import {
   useXboxPreview, useXboxImport,
 } from '@/hooks/useUserGames'
 import type {
-  SteamPreviewItem, SteamConfirmItem,
+  SteamPreviewResult, SteamPreviewItem, SteamConfirmItem,
   PSNPreviewItem, PSNConfirmItem,
   XboxPreviewItem, XboxConfirmItem,
 } from '@/api/userGames'
@@ -21,7 +21,7 @@ import XboxValidationList from './XboxValidationList'
 import type { LibraryImportSourceConfig } from './LibraryImportPanel'
 
 
-export const steamSource: LibraryImportSourceConfig<SteamPreviewItem, SteamConfirmItem> = {
+export const steamSource: LibraryImportSourceConfig<SteamPreviewItem, SteamConfirmItem, SteamPreviewResult> = {
   inputLabel: 'Profil Steam',
   inputPlaceholder: 'steamcommunity.com/id/… ou SteamID64',
   emptyMessage: 'Aucun jeu trouvé sur ce profil Steam.',
@@ -43,6 +43,7 @@ export const steamSource: LibraryImportSourceConfig<SteamPreviewItem, SteamConfi
   },
 
   usePreviewMutation: useSteamPreview,
+  extractPreview: (raw, _input) => ({ items: raw.items, account: raw.resolved_steam_id }),
   useImportMutation: useSteamImport,
 
   renderValidationList: ({ items, onImport, importing }) => (
@@ -71,9 +72,11 @@ export const psnSource: LibraryImportSourceConfig<PSNPreviewItem, PSNConfirmItem
     psn_profile_private: 'Profil PSN privé. Va dans Paramètres PSN → Confidentialité → "Activité gaming" → Public.',
     psn_npsso_invalid: 'Service PSN temporairement indisponible. Réessaie dans quelques instants.',
     psn_api_unavailable: 'Service PSN temporairement indisponible. Réessaie dans quelques instants.',
+    psn_account_already_claimed: 'Ce compte PSN est déjà associé à un autre compte GolAi.',
   },
 
   usePreviewMutation: usePSNPreview,
+  extractPreview: (raw, input) => ({ items: raw, account: input }),
   useImportMutation: usePSNImport,
 
   renderValidationList: ({ items, onImport, importing }) => (
@@ -106,6 +109,7 @@ export const xboxSource: LibraryImportSourceConfig<XboxPreviewItem, XboxConfirmI
   },
 
   usePreviewMutation: useXboxPreview,
+  extractPreview: (raw, input) => ({ items: raw, account: input }),
   useImportMutation: useXboxImport,
 
   renderValidationList: ({ items, onImport, importing }) => (

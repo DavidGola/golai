@@ -83,14 +83,15 @@ async def test_generic_creates_minimal_game_for_unknown_source_id(db_session, us
     ]
     source = _FakeSource(externals)
 
-    items = await build_preview_generic(db_session, user_a, "account_x", source)
+    items, storage_value = await build_preview_generic(db_session, user_a, "account_x", source)
 
     assert len(items) == 1
     assert items[0].external.source_id == "FAKE_XYZ"
     assert items[0].game.title == "Brand New Title"
     assert items[0].suggested_status == UserGameStatus.todo
-    # User a bien été tagged
-    assert user_a.psn_online_id == "account_x"
+    assert storage_value == "account_x"
+    # Le compte n'est PAS écrit au preview
+    assert user_a.psn_online_id is None
 
 
 async def test_generic_uses_existing_game_when_source_id_matches(db_session, user_a):
@@ -109,21 +110,23 @@ async def test_generic_uses_existing_game_when_source_id_matches(db_session, use
     ]
     source = _FakeSource(externals)
 
-    items = await build_preview_generic(db_session, user_a, "acc", source)
+    items, _ = await build_preview_generic(db_session, user_a, "acc", source)
 
     assert len(items) == 1
     assert items[0].game.id == game.id  # ← le game existant, pas un nouveau
 
 
-async def test_generic_empty_externals_still_updates_user_sync(db_session, user_a):
-    """Library externe vide : on doit quand même persister le compte + sync_at."""
+async def test_generic_empty_externals_returns_empty_tuple(db_session, user_a):
+    """Library externe vide : retourne ([], storage_value) sans modifier le user."""
     source = _FakeSource([])
 
-    items = await build_preview_generic(db_session, user_a, "acc", source)
+    items, storage_value = await build_preview_generic(db_session, user_a, "acc", source)
 
     assert items == []
-    assert user_a.psn_online_id == "acc"
-    assert user_a.last_psn_sync_at is not None
+    assert storage_value == "acc"
+    # Le compte n'est PAS écrit au preview
+    assert user_a.psn_online_id is None
+    assert user_a.last_psn_sync_at is None
 
 
 # ─── Garde-fou : le Protocol n'est pas vide ──────────────────────────────────

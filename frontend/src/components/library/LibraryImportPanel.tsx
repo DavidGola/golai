@@ -11,7 +11,7 @@ import type { UseMutationResult } from '@tanstack/react-query'
  * varie : labels, textes d'aide, mapping d'erreurs API, hooks de mutation,
  * et le rendu de la ValidationList propre à chaque source.
  */
-export interface LibraryImportSourceConfig<TPreview, TConfirm> {
+export interface LibraryImportSourceConfig<TPreview, TConfirm, TRawPreview = TPreview[]> {
   inputLabel: string                            // "Profil Steam", "PSN Online ID"…
   inputPlaceholder: string                      // "steamcommunity.com/id/…"
   inputHelperText?: string                      // sous l'input (PSN/Xbox en ont)
@@ -22,8 +22,11 @@ export interface LibraryImportSourceConfig<TPreview, TConfirm> {
   /** Mapping `detail` HTTP → message FR. La key par défaut est le message générique. */
   errorMessages: Record<string, string>
 
-  usePreviewMutation: () => UseMutationResult<TPreview[], unknown, string>
-  useImportMutation: () => UseMutationResult<{ imported: number; skipped: number }, unknown, TConfirm[]>
+  usePreviewMutation: () => UseMutationResult<TRawPreview, unknown, string>
+  /** Extrait les items et l'identifiant de compte depuis le résultat brut du preview.
+   * Pour PSN/Xbox, account = inputValue. Pour Steam, account = resolved_steam_id. */
+  extractPreview: (raw: TRawPreview, inputValue: string) => { items: TPreview[]; account: string }
+  useImportMutation: () => UseMutationResult<{ imported: number; skipped: number }, unknown, { items: TConfirm[]; account: string }>
 
   renderValidationList: (props: {
     items: TPreview[]
@@ -42,15 +45,16 @@ function buildErrorMessage(err: unknown, mapping: Record<string, string>): strin
   return 'Impossible de charger ta bibliothèque. Réessaie plus tard.'
 }
 
-export default function LibraryImportPanel<TPreview, TConfirm>({
+export default function LibraryImportPanel<TPreview, TConfirm, TRawPreview = TPreview[]>({
   source,
   onDone,
 }: {
-  source: LibraryImportSourceConfig<TPreview, TConfirm>
+  source: LibraryImportSourceConfig<TPreview, TConfirm, TRawPreview>
   onDone: () => void
 }) {
   const [input, setInput] = useState('')
   const [preview, setPreview] = useState<TPreview[] | null>(null)
+  const [account, setAccount] = useState('')
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number } | null>(null)
 
   const previewMutation = source.usePreviewMutation()
@@ -59,12 +63,16 @@ export default function LibraryImportPanel<TPreview, TConfirm>({
   const handleLoad = () => {
     if (!input.trim()) return
     previewMutation.mutate(input.trim(), {
-      onSuccess: (items) => setPreview(items),
+      onSuccess: (raw) => {
+        const { items, account: resolvedAccount } = source.extractPreview(raw, input.trim())
+        setPreview(items)
+        setAccount(resolvedAccount)
+      },
     })
   }
 
   const handleImport = (items: TConfirm[]) => {
-    importMutation.mutate(items, {
+    importMutation.mutate({ items, account }, {
       onSuccess: (result) => setImportResult(result),
     })
   }
@@ -118,7 +126,9 @@ export default function LibraryImportPanel<TPreview, TConfirm>({
           })
         )}
         {importMutation.isError && (
-          <p className="text-[12px] text-[#FF6B84]">Erreur lors de l'import. Réessaie.</p>
+          <p className="text-[12px] text-[#FF6B84]">
+            {buildErrorMessage(importMutation.error, source.errorMessages)}
+          </p>
         )}
       </div>
     )

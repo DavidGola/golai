@@ -26,13 +26,15 @@ def _dto(
 
 
 @pytest.mark.asyncio
-async def test_build_preview_empty_library_updates_sync_at(db_session, user_a):
+async def test_build_preview_empty_library_returns_empty_tuple(db_session, user_a):
     with patch("app.services.psn_import.psn.fetch_library", return_value=[]):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, online_id = await build_preview(db_session, user_a, "SomeUser")
 
-    assert result == []
-    assert user_a.last_psn_sync_at is not None
-    assert user_a.psn_online_id == "SomeUser"
+    assert items == []
+    assert online_id == "SomeUser"
+    # Le compte n'est PAS écrit lors du preview
+    assert user_a.psn_online_id is None
+    assert user_a.last_psn_sync_at is None
 
 
 @pytest.mark.asyncio
@@ -42,10 +44,10 @@ async def test_build_preview_psn_id_exact_match(db_session, user_a):
     await db_session.commit()
 
     with patch("app.services.psn_import.psn.fetch_library", return_value=[_dto()]):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, _ = await build_preview(db_session, user_a, "SomeUser")
 
-    assert len(result) == 1
-    item = result[0]
+    assert len(items) == 1
+    item = items[0]
     assert item.game_id == game.id
     assert item.title == "God of War"
     assert item.already_in_library is False
@@ -55,25 +57,23 @@ async def test_build_preview_psn_id_exact_match(db_session, user_a):
 
 @pytest.mark.asyncio
 async def test_build_preview_fuzzy_title_match(db_session, user_a):
-    # Game with no psn_id but title similar enough (>= 0.6 similarity)
     game = Game(title="God of War")
     db_session.add(game)
     await db_session.commit()
 
     with patch("app.services.psn_import.psn.fetch_library", return_value=[_dto()]):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, _ = await build_preview(db_session, user_a, "SomeUser")
 
-    assert len(result) == 1
-    assert result[0].game_id == game.id
+    assert len(items) == 1
+    assert items[0].game_id == game.id
 
 
 @pytest.mark.asyncio
 async def test_build_preview_new_game_created(db_session, user_a):
     with patch("app.services.psn_import.psn.fetch_library", return_value=[_dto(title="Unknown PSN Title")]):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, _ = await build_preview(db_session, user_a, "SomeUser")
 
-    assert len(result) == 1
-    # Game should have been created with the psn_id
+    assert len(items) == 1
     from sqlalchemy import select
     from app.models.game import Game as GameModel
     game = (await db_session.execute(
@@ -92,9 +92,9 @@ async def test_build_preview_already_in_library(db_session, user_a):
     await db_session.commit()
 
     with patch("app.services.psn_import.psn.fetch_library", return_value=[_dto()]):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, _ = await build_preview(db_session, user_a, "SomeUser")
 
-    assert result[0].already_in_library is True
+    assert items[0].already_in_library is True
 
 
 @pytest.mark.asyncio
@@ -105,16 +105,16 @@ async def test_build_preview_suggested_status_from_trophy_pct(db_session, user_a
         _dto(psn_id="NPWR003", title="Game0", trophy_progress_pct=0),
     ]
     with patch("app.services.psn_import.psn.fetch_library", return_value=dtos):
-        result = await build_preview(db_session, user_a, "SomeUser")
+        items, _ = await build_preview(db_session, user_a, "SomeUser")
 
-    by_psn = {item.title: item for item in result}
+    by_psn = {item.title: item for item in items}
     assert by_psn["Game100"].suggested_status == UserGameStatus.completed
     assert by_psn["Game50"].suggested_status == UserGameStatus.todo
     assert by_psn["Game0"].suggested_status == UserGameStatus.not_started
 
 
 @pytest.mark.asyncio
-async def test_confirm_import_inserts_with_psn_source_and_updates_sync_at(db_session, user_a):
+async def test_confirm_import_inserts_and_saves_account(db_session, user_a):
     game = Game(title="God of War", psn_id="NPWR001")
     db_session.add(game)
     await db_session.flush()
@@ -122,10 +122,11 @@ async def test_confirm_import_inserts_with_psn_source_and_updates_sync_at(db_ses
     from app.schemas.psn_import import PSNConfirmItem
     item = PSNConfirmItem(game_id=game.id, status=UserGameStatus.completed, user_rating=9, review=None, hours_played=20.0)
 
-    imported, skipped = await confirm_import(db_session, user_a, [item])
+    imported, skipped = await confirm_import(db_session, user_a, [item], "SomeUser")
 
     assert imported == 1
     assert skipped == 0
+    assert user_a.psn_online_id == "SomeUser"
     assert user_a.last_psn_sync_at is not None
 
     from sqlalchemy import select
@@ -145,8 +146,8 @@ async def test_confirm_import_idempotent_second_call_all_skipped(db_session, use
     from app.schemas.psn_import import PSNConfirmItem
     item = PSNConfirmItem(game_id=game.id, status=None, user_rating=None, review=None, hours_played=None)
 
-    imported1, skipped1 = await confirm_import(db_session, user_a, [item])
-    imported2, skipped2 = await confirm_import(db_session, user_a, [item])
+    imported1, skipped1 = await confirm_import(db_session, user_a, [item], "SomeUser")
+    imported2, skipped2 = await confirm_import(db_session, user_a, [item], "SomeUser")
 
     assert imported1 == 1
     assert skipped1 == 0

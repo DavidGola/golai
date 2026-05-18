@@ -22,6 +22,14 @@ export default function ChatPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('golai_sidebar_open')
+    return saved === null ? true : saved === 'true'
+  })
+  useEffect(() => {
+    localStorage.setItem('golai_sidebar_open', String(sidebarOpen))
+  }, [sidebarOpen])
+
   const [libraryOpen, setLibraryOpen] = useState(() => {
     const saved = localStorage.getItem('golai_library_open')
     return saved === null ? true : saved === 'true'
@@ -80,7 +88,7 @@ export default function ChatPage() {
   return (
     <div style={{ display: 'flex', height: '100%' }}>
       {/* Sidebar — uniquement si connecté */}
-      {user && <SidebarLeft />}
+      {user && sidebarOpen && <SidebarLeft />}
 
       {/* Chat central */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: 'var(--color-base)' }}>
@@ -91,27 +99,48 @@ export default function ChatPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 20px', borderBottom: '1px solid var(--color-separator)', background: 'var(--color-base)',
         }}>
-          {/* Logo quand pas connecté */}
-          {!user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: 6, background: 'var(--color-accent)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Orbitron', sans-serif", fontSize: 11, fontWeight: 700, color: '#fff',
-                boxShadow: '0 0 12px var(--color-accent-glow)',
-              }}>G</div>
-              <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: '1.5px', color: 'var(--color-content)' }}>
-                GOLAI
-              </span>
-            </div>
-          )}
+          {/* Gauche : logo (anon) ou toggle sidebar + titre (connecté) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {user && (
+              <button
+                onClick={() => setSidebarOpen(v => !v)}
+                title={sidebarOpen ? 'Fermer les conversations' : 'Ouvrir les conversations'}
+                style={{
+                  flexShrink: 0, width: 34, height: 34, borderRadius: 6,
+                  border: '1px solid transparent', background: 'transparent',
+                  color: 'var(--color-subtle)', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s',
+                } as React.CSSProperties}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--color-hover)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+              >
+                <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="13" height="13" rx="2"/>
+                  <line x1="6.5" y1="2" x2="6.5" y2="15"/>
+                </svg>
+              </button>
+            )}
 
-          {/* Titre conv quand connecté */}
-          {user && (
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-content)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {title}
-            </span>
-          )}
+            {!user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 6, background: 'var(--color-accent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Orbitron', sans-serif", fontSize: 11, fontWeight: 700, color: '#fff',
+                  boxShadow: '0 0 12px var(--color-accent-glow)',
+                }}>G</div>
+                <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: '1.5px', color: 'var(--color-content)' }}>
+                  GOLAI
+                </span>
+              </div>
+            )}
+
+            {user && (
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-content)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {title}
+              </span>
+            )}
+          </div>
 
           {/* Actions header */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

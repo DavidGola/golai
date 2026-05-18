@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listUserGames, addUserGame, updateUserGame, removeUserGame, steamPreview, steamImport, psnPreview, psnImport, xboxPreview, xboxImport } from '@/api/userGames'
-import type { SteamConfirmItem, PSNConfirmItem, XboxConfirmItem } from '@/api/userGames'
+import type { SteamPreviewResult, SteamConfirmItem, PSNPreviewItem, PSNConfirmItem, XboxPreviewItem, XboxConfirmItem } from '@/api/userGames'
 import type { UserGameStatus } from '@/types/userGame'
 
 const KEYS = { all: ['user-games'] as const }
@@ -36,37 +36,46 @@ export function useRemoveUserGame() {
 }
 
 export function useSteamPreview() {
-  return useMutation({ mutationFn: (profile: string) => steamPreview(profile) })
+  return useMutation<SteamPreviewResult, unknown, string>({
+    mutationFn: (profile: string) => steamPreview(profile),
+  })
 }
 
 export function useSteamImport() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: SteamConfirmItem[]) => steamImport(items),
+    mutationFn: ({ items, account }: { items: SteamConfirmItem[]; account: string }) =>
+      steamImport({ items, steam_id: account }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }
 
 export function usePSNPreview() {
-  return useMutation({ mutationFn: (online_id: string) => psnPreview(online_id) })
+  return useMutation<PSNPreviewItem[], unknown, string>({
+    mutationFn: (online_id: string) => psnPreview(online_id),
+  })
 }
 
 export function usePSNImport() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: PSNConfirmItem[]) => psnImport(items),
+    mutationFn: ({ items, account }: { items: PSNConfirmItem[]; account: string }) =>
+      psnImport({ items, online_id: account }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }
 
 export function useXboxPreview() {
-  return useMutation({ mutationFn: (gamertag: string) => xboxPreview(gamertag) })
+  return useMutation<XboxPreviewItem[], unknown, string>({
+    mutationFn: (gamertag: string) => xboxPreview(gamertag),
+  })
 }
 
 export function useXboxImport() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (items: XboxConfirmItem[]) => xboxImport(items),
+    mutationFn: ({ items, account }: { items: XboxConfirmItem[]; account: string }) =>
+      xboxImport({ items, gamertag: account }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }

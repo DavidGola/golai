@@ -33,6 +33,7 @@ class PSNConfirmItem(BaseModel):
 
 class PSNConfirmRequest(BaseModel):
     items: list[PSNConfirmItem]
+    online_id: str = Field(..., pattern=r"^[\w-]{3,16}$")
 
 
 class PSNConfirmResponse(BaseModel):

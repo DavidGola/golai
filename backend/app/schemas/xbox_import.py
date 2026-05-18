@@ -31,6 +31,7 @@ class XboxConfirmItem(BaseModel):
 
 class XboxConfirmRequest(BaseModel):
     items: list[XboxConfirmItem]
+    gamertag: str = Field(..., min_length=1, max_length=15, pattern=r"^[\w\s]+$")
 
 
 class XboxConfirmResponse(BaseModel):

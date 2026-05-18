@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from typing import Any, Callable, Protocol
 
 from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.game import Game
@@ -146,23 +147,18 @@ async def build_preview_generic(
     user: User,
     raw_input: str,
     source: LibraryImportSource,
-) -> list[InternalPreviewItem]:
+) -> tuple[list[InternalPreviewItem], str]:
     """Orchestration partagée Steam/PSN/Xbox/futurs.
 
-    Le caller (adapter spécifique) reçoit les InternalPreviewItem et les
-    projette vers son schema response (SteamPreviewItem / PSNPreviewItem / …).
+    Retourne (items, storage_value). Le caller projette les items vers son
+    schema response, et doit passer storage_value à confirm_import_generic
+    pour que le compte soit associé à l'utilisateur uniquement lors du confirm.
     """
     api_id, storage_value = await source.resolve_account(raw_input)
     externals = await source.fetch_owned(api_id)
 
-    # User : stocker le compte (valeur lisible) + le timestamp de sync,
-    # même si library vide.
-    setattr(user, source.user_account_attr, storage_value)
-    setattr(user, source.user_sync_at_attr, datetime.now(UTC).replace(tzinfo=None))
-
     if not externals:
-        await db.commit()
-        return []
+        return [], storage_value
 
     # Match par source_id existing
     source_ids = [source.cast_source_id_for_db(e.source_id) for e in externals]
@@ -230,7 +226,7 @@ async def build_preview_generic(
         ))
 
     await db.commit()
-    return items
+    return items, storage_value
 
 
 # ─── Orchestration : confirm_import ──────────────────────────────────────────
@@ -242,6 +238,7 @@ async def confirm_import_generic(
     items: list[Any],
     source: LibraryImportSource,
     extract_hours_played: Callable[[Any], float | None],
+    account_value: str,
 ) -> tuple[int, int]:
     """Insert UserGame rows, skip dupes. Returns (imported, skipped).
 
@@ -249,6 +246,7 @@ async def confirm_import_generic(
     game_id + status + user_rating + review.
     `extract_hours_played` : lambda qui extrait les heures jouées depuis
     l'item (Steam: hours_on_record, PSN: hours_played, Xbox: None).
+    `account_value` : valeur à stocker sur user.{source.user_account_attr}.
     """
     if not items:
         return 0, 0
@@ -279,8 +277,13 @@ async def confirm_import_generic(
         ))
         imported += 1
 
+    setattr(user, source.user_account_attr, account_value)
     setattr(user, source.user_sync_at_attr, datetime.now(UTC).replace(tzinfo=None))
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise ValueError(f"{source.source_name}_account_already_claimed")
     return imported, skipped
 
 

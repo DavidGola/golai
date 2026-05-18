@@ -20,6 +20,7 @@ class SteamPreviewItem(BaseModel):
 
 class SteamPreviewResponse(BaseModel):
     items: list[SteamPreviewItem]
+    resolved_steam_id: str
 
 
 class SteamConfirmItem(BaseModel):
@@ -32,6 +33,7 @@ class SteamConfirmItem(BaseModel):
 
 class SteamConfirmRequest(BaseModel):
     items: list[SteamConfirmItem]
+    steam_id: str
 
 
 class SteamConfirmResponse(BaseModel):
