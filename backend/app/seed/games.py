@@ -274,5 +274,8 @@ async def upsert_game(
     await _sync_taxonomy(session, games_modes, "mode_id", GameMode, game.id, igdb_game.get("game_modes") or [])
     await _sync_taxonomy(session, games_tags, "tag_id", Tag, game.id, igdb_game.get("themes") or [])
 
+    if force:
+        game.ingestion_hash = None
+
     await session.commit()
     return game

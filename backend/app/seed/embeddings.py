@@ -80,9 +80,10 @@ async def generate_embeddings(session: AsyncSession, model, batch_size: int = 32
     active_emb = exists().where(
         (GameEmbedding.game_id == Game.id) & (GameEmbedding.is_active == True)  # noqa: E712
     )
+    needs_embed = not_(active_emb) | Game.ingestion_hash.is_(None)
     stmt = (
         select(Game)
-        .where(not_(active_emb))
+        .where(needs_embed)
         .options(
             selectinload(Game.genres),
             selectinload(Game.platforms),
@@ -113,16 +114,26 @@ async def generate_embeddings(session: AsyncSession, model, batch_size: int = 32
             # Check if hash changed (skip if same)
             if game.ingestion_hash == text_hash:
                 continue
-            for emb in game.embeddings:
-                emb.is_active = False
-            session.add(
-                GameEmbedding(
-                    game_id=game.id,
-                    model_version=MODEL_VERSION,
-                    embedding=vector.tolist(),
-                    is_active=True,
-                )
+            existing = next(
+                (e for e in game.embeddings if e.model_version == MODEL_VERSION), None
             )
+            if existing:
+                existing.embedding = vector.tolist()
+                existing.is_active = True
+                for emb in game.embeddings:
+                    if emb is not existing:
+                        emb.is_active = False
+            else:
+                for emb in game.embeddings:
+                    emb.is_active = False
+                session.add(
+                    GameEmbedding(
+                        game_id=game.id,
+                        model_version=MODEL_VERSION,
+                        embedding=vector.tolist(),
+                        is_active=True,
+                    )
+                )
             game.ingestion_hash = text_hash
 
         await session.commit()
