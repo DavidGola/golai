@@ -14,6 +14,7 @@ le Protocol — pas de copier-coller de 130 LOC.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Callable, Protocol
@@ -261,10 +262,12 @@ async def confirm_import_generic(
 
     imported = 0
     skipped = 0
+    seen: set[uuid.UUID] = set()
     for item in items:
-        if item.game_id in existing:
+        if item.game_id in existing or item.game_id in seen:
             skipped += 1
             continue
+        seen.add(item.game_id)
         db.add(UserGame(
             user_id=user.id,
             game_id=item.game_id,
