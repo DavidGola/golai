@@ -54,13 +54,13 @@ def test_anonymous_agent_cannot_read_library(anon_tool_names):
     assert "get_my_library" not in anon_tool_names
 
 
-def test_anonymous_agent_only_exposes_search_tools(anon_tool_names):
-    """Whitelist explicite : seuls les tools search_* sont autorisés en anonyme.
+def test_anonymous_agent_only_exposes_catalog_tools(anon_tool_names):
+    """Whitelist explicite : seuls les tools catalogue sont autorisés en anonyme.
 
     Si un nouveau tool est ajouté à l'agent anonyme, il doit explicitement
     être ajouté à cette liste — sinon le test casse et le dev doit justifier.
     """
-    allowed = {"search_games", "search_games_multi"}
+    allowed = {"search_catalog", "search_catalog_multi"}
     extra = anon_tool_names - allowed
     assert not extra, (
         f"Tools non whitelistés sur l'agent anonyme : {extra}. "
@@ -68,20 +68,21 @@ def test_anonymous_agent_only_exposes_search_tools(anon_tool_names):
     )
 
 
-def test_search_tools_are_shared_with_auth(auth_tool_names, anon_tool_names):
-    """search_games et search_games_multi doivent exister sur les deux agents
-    (toolset partagé). Garantit qu'on ne re-duplique pas accidentellement."""
-    assert "search_games" in auth_tool_names
-    assert "search_games" in anon_tool_names
-    assert "search_games_multi" in auth_tool_names
-    assert "search_games_multi" in anon_tool_names
+def test_catalog_tools_are_shared_with_auth(auth_tool_names, anon_tool_names):
+    """search_catalog et search_catalog_multi doivent exister sur les deux agents
+    (catalog_toolset partagé). Garantit qu'on ne duplique pas accidentellement."""
+    assert "search_catalog" in auth_tool_names
+    assert "search_catalog" in anon_tool_names
+    assert "search_catalog_multi" in auth_tool_names
+    assert "search_catalog_multi" in anon_tool_names
 
 
 def test_auth_agent_exposes_all_library_tools(auth_tool_names):
-    """L'agent auth doit avoir l'ensemble complet : search + library read + 4 propose_*."""
+    """L'agent auth doit avoir l'ensemble complet : catalog + owned + library read + 4 propose_*."""
     expected = {
-        "search_games",
-        "search_games_multi",
+        "search_catalog",
+        "search_catalog_multi",
+        "search_owned_games",
         "get_my_library",
         "propose_add_to_library",
         "propose_change_status",

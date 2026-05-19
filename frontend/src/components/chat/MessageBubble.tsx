@@ -6,9 +6,10 @@ import DebugPanel from '@/components/chat/DebugPanel'
 import CitedGamesRenderer from '@/components/chat/CitedGamesRenderer'
 
 function toolLabel(toolName: string): string {
-  if (toolName === 'search_games' || toolName === 'search_games_anon') {
+  if (toolName === 'search_catalog' || toolName === 'search_catalog_multi') {
     return 'Recherche de jeux pertinents…'
   }
+  if (toolName === 'search_owned_games') return 'Recherche dans ta bibliothèque…'
   if (toolName === 'get_my_library') return 'Lecture de ta bibliothèque…'
   if (toolName === 'propose_add_to_library') return 'Préparation de la proposition…'
   if (toolName === 'propose_change_status') return 'Préparation de la proposition…'

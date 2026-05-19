@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -60,26 +62,60 @@ _LEXICAL_QUERY = text(f"""
 """)
 
 
-async def retrieve_games(db: AsyncSession, query: str, top_k: int | None = None) -> list[dict]:
+_LEXICAL_QUERY_EXCLUDE = text(f"""
+    SELECT {_COLUMNS}
+    FROM games g
+    WHERE g.title % :query AND NOT (g.id = ANY(:exclude_ids))
+    ORDER BY similarity(g.title, :query) DESC
+    LIMIT :lex_k
+""")
+
+_RAG_QUERY_EXCLUDE = text(f"""
+    SELECT {_COLUMNS}
+    FROM games g
+    JOIN game_embeddings e ON e.game_id = g.id
+    WHERE e.is_active = true AND e.model_version = :model_version AND NOT (g.id = ANY(:exclude_ids))
+    ORDER BY e.embedding <=> CAST(:vec AS vector)
+    LIMIT :top_k
+""")
+
+
+async def retrieve_games(
+    db: AsyncSession,
+    query: str,
+    top_k: int | None = None,
+    *,
+    exclude_ids: set[uuid.UUID] | None = None,
+) -> list[dict]:
     if not query.strip():
         return []
 
     k = top_k or settings.rag_top_k
     lex_k = min(5, k)
     metadata = {"top_k": str(k), "embedding_model": settings.embedding_model}
+    exclude_list = list(exclude_ids) if exclude_ids else None
 
     with observe("rag.retrieve_games", input=captured_input(query), metadata=metadata) as observation:
         # Lexical pass (trigram) — catches title variants like "Portal 1" → "Portal"
-        lex_rows = await db.execute(_LEXICAL_QUERY, {"query": query, "lex_k": lex_k})
+        if exclude_list:
+            lex_rows = await db.execute(_LEXICAL_QUERY_EXCLUDE, {"query": query, "lex_k": lex_k, "exclude_ids": exclude_list})
+        else:
+            lex_rows = await db.execute(_LEXICAL_QUERY, {"query": query, "lex_k": lex_k})
         lexical = [dict(row._mapping) for row in lex_rows]
 
-        # Semantic pass — unchanged kNN vector search
+        # Semantic pass — kNN vector search
         vector = await embed_query(query)
         vec_str = "[" + ",".join(str(x) for x in vector) + "]"
-        vec_rows = await db.execute(
-            _RAG_QUERY,
-            {"vec": vec_str, "top_k": k, "model_version": settings.embedding_model},
-        )
+        if exclude_list:
+            vec_rows = await db.execute(
+                _RAG_QUERY_EXCLUDE,
+                {"vec": vec_str, "top_k": k, "model_version": settings.embedding_model, "exclude_ids": exclude_list},
+            )
+        else:
+            vec_rows = await db.execute(
+                _RAG_QUERY,
+                {"vec": vec_str, "top_k": k, "model_version": settings.embedding_model},
+            )
         semantic = [dict(row._mapping) for row in vec_rows]
 
         # Merge: lexical hits first (high-confidence title match), then semantic, dedupe by id

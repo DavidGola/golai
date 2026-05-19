@@ -14,6 +14,7 @@ import app.services.proposals as proposals_service
 import app.services.user_games as ug_service
 from app.ai.prompts import build_auth_system_prompt, build_anonymous_system_prompt
 from app.ai.rag import retrieve_games
+from app.services.library import played_game_ids
 from app.config import settings
 from app.models.user import User
 from app.models.user_game import UserGameStatus
@@ -143,23 +144,32 @@ class AnonymousAgentDeps:
     db: AsyncSession
 
 
-# ─── Toolset partagé : tools accessibles aux deux agents (auth + anonyme) ────
-# Le LLM voit le même nom (`search_games`) dans les deux contextes — pas de
-# duplication de définition. Le toolset accepte tout deps qui satisfait le
-# protocol HasDb (structural typing).
-search_toolset: FunctionToolset[HasDb] = FunctionToolset()
+# ─── Toolset catalogue : découverte (auth + anonyme) ────────────────────────
+# En auth, exclut automatiquement les jeux "joués" (hors Backlog).
+# En anonyme, aucun filtre (pas de Library).
+catalog_toolset: FunctionToolset[HasDb] = FunctionToolset()
 
 
-@search_toolset.tool
-async def search_games(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
-    """Recherche des jeux pertinents par similarité sémantique."""
-    return await retrieve_games(ctx.deps.db, query, top_k)
+@catalog_toolset.tool
+async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
+    """Recherche des jeux dans le catalogue pour la découverte. En auth, exclut automatiquement les jeux déjà joués (>= 2h ou completed/dropped). Pour comparer/discuter des jeux déjà possédés, utilise search_owned_games."""
+    exclude_ids = None
+    if isinstance(ctx.deps, AgentDeps):
+        played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
+        exclude_ids = played if played else None
+    return await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids)
 
 
-@search_toolset.tool
-async def search_games_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
-    """Lance plusieurs recherches en parallèle avec des formulations différentes et déduplique les résultats."""
-    batches: list[list[dict]] = list(await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k) for q in queries]))
+@catalog_toolset.tool
+async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
+    """Lance plusieurs recherches catalogue en parallèle avec des formulations différentes et déduplique les résultats. Même filtre Backlog que search_catalog."""
+    exclude_ids = None
+    if isinstance(ctx.deps, AgentDeps):
+        played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
+        exclude_ids = played if played else None
+    batches: list[list[dict]] = list(
+        await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k, exclude_ids=exclude_ids) for q in queries])
+    )
     seen_ids: set[str] = set()
     merged: list[dict] = []
     for batch in batches:
@@ -171,13 +181,23 @@ async def search_games_multi(ctx: RunContext[HasDb], queries: list[str], top_k: 
     return merged
 
 
+# ─── Toolset owned : recherche sans filtre Library (auth uniquement) ─────────
+owned_toolset: FunctionToolset[AgentDeps] = FunctionToolset()
+
+
+@owned_toolset.tool
+async def search_owned_games(ctx: RunContext[AgentDeps], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
+    """Recherche des jeux sans filtre Library. À utiliser uniquement si l'utilisateur veut explicitement comparer ou parler d'un jeu qu'il possède déjà."""
+    return await retrieve_games(ctx.deps.db, query, top_k)
+
+
 _model, _model_settings = _build_model()
 
 agent: Agent[AgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
     deps_type=AgentDeps,
-    toolsets=[search_toolset],
+    toolsets=[catalog_toolset, owned_toolset],
     name="golai-auth-agent",
     instrument=get_agent_instrumentation(),
 )
@@ -279,7 +299,7 @@ async def propose_add_to_library(
 ) -> dict:
     """Propose d'ajouter un jeu à la bibliothèque, avec une note et/ou un avis optionnels.
     Ne modifie PAS la DB — crée une carte de confirmation.
-    game_id : provient d'un résultat search_games. status : "todo", "not_started", "completed", "dropped".
+    game_id : provient d'un résultat search_catalog. status : "todo", "not_started", "completed", "dropped".
     rating : entier 1-10 (optionnel). review : texte libre (optionnel).
     Retourne une erreur si le jeu est déjà dans la bibliothèque."""
     gid = _parse_uuid_or_none(game_id)
@@ -309,7 +329,7 @@ async def propose_change_status(
     """Propose de changer le statut d'un jeu de la bibliothèque. Ne modifie PAS la DB.
     Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
     user_game_id : l'id du UserGame (obtenu via get_my_library).
-    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_catalog ou annotation d'historique).
     new_status : "todo", "not_started", "completed", "dropped"."""
     ugid = _parse_uuid_or_none(user_game_id)
     gid = _parse_uuid_or_none(game_id)
@@ -341,7 +361,7 @@ async def propose_set_rating(
     """Propose de noter un jeu et/ou d'écrire une review. Ne modifie PAS la DB.
     Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
     user_game_id : l'id du UserGame (obtenu via get_my_library).
-    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique).
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_catalog ou annotation d'historique).
     rating : entier 1-10. review : texte libre."""
     ugid = _parse_uuid_or_none(user_game_id)
     gid = _parse_uuid_or_none(game_id)
@@ -372,7 +392,7 @@ async def propose_remove_from_library(
     """Propose de supprimer un jeu de la bibliothèque. Ne modifie PAS la DB.
     Fournir SOIT user_game_id SOIT game_id (mais pas les deux).
     user_game_id : l'id du UserGame (obtenu via get_my_library).
-    game_id : l'id du jeu dans le catalogue (ex: depuis search_games ou annotation d'historique)."""
+    game_id : l'id du jeu dans le catalogue (ex: depuis search_catalog ou annotation d'historique)."""
     ugid = _parse_uuid_or_none(user_game_id)
     gid = _parse_uuid_or_none(game_id)
     if user_game_id and ugid is None:
@@ -395,7 +415,7 @@ anonymous_agent: Agent[AnonymousAgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
     deps_type=AnonymousAgentDeps,
-    toolsets=[search_toolset],
+    toolsets=[catalog_toolset],
     system_prompt=build_anonymous_system_prompt(),
     name="golai-anonymous-agent",
     instrument=get_agent_instrumentation(),
