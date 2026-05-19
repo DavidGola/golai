@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,6 +18,8 @@ class GameListItem(BaseModel):
     steam_score: int | None = None
     steam_id: int | None = None
     hltb_main: float | None = None
+    edition_type: Literal["original", "remaster", "remake", "expanded"] = "original"
+    parent_game_id: uuid.UUID | None = None
     genres: list[GenreRead] = []
     platforms: list[PlatformRead] = []
 

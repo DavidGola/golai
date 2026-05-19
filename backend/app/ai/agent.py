@@ -14,6 +14,7 @@ import app.services.proposals as proposals_service
 import app.services.user_games as ug_service
 from app.ai.prompts import build_auth_system_prompt, build_anonymous_system_prompt
 from app.ai.rag import retrieve_games
+from app.services.edition_collapse import collapse_editions
 from app.services.library import played_game_ids
 from app.config import settings
 from app.models.user import User
@@ -157,7 +158,8 @@ async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settin
     if isinstance(ctx.deps, AgentDeps):
         played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
         exclude_ids = played if played else None
-    return await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids)
+    rows = await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids)
+    return collapse_editions(rows)
 
 
 @catalog_toolset.tool
@@ -178,7 +180,7 @@ async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k
             if gid and gid not in seen_ids:
                 seen_ids.add(gid)
                 merged.append(game)
-    return merged
+    return collapse_editions(merged)
 
 
 # ─── Toolset owned : recherche sans filtre Library (auth uniquement) ─────────

@@ -129,3 +129,93 @@ def test_search_owned_games_not_in_anonymous_toolset():
         t for ts in anonymous_agent._user_toolsets for t in ts.tools.keys()
     }
     assert "search_owned_games" not in anon_tool_names
+
+
+# ─── Tests collapse éditions ──────────────────────────────────────────────────
+
+from datetime import datetime
+
+
+def _edition_dict(id_: str, edition_type: str = "original", parent_game_id: str | None = None, release_date: datetime | None = None) -> dict:
+    return {"id": id_, "title": f"Game {id_}", "edition_type": edition_type, "parent_game_id": parent_game_id, "release_date": release_date}
+
+
+# T10
+async def test_search_catalog_collapses_remaster(session_factory, monkeypatch):
+    """search_catalog retourne uniquement le Remaster quand Original + Remaster matchent."""
+    ds_id = str(uuid.uuid4())
+    dsr_id = str(uuid.uuid4())
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+        return [
+            _edition_dict(ds_id, "original", release_date=datetime(2012, 1, 1)),
+            _edition_dict(dsr_id, "remaster", parent_game_id=ds_id, release_date=datetime(2018, 1, 1)),
+        ]
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        results = await search_catalog(ctx, "souls", 10)
+
+    result_ids = [r["id"] for r in results]
+    assert dsr_id in result_ids
+    assert ds_id not in result_ids
+
+
+# T11
+async def test_search_catalog_keeps_both_for_remake(session_factory, monkeypatch):
+    """search_catalog retourne Original et Remake ensemble."""
+    re2_id = str(uuid.uuid4())
+    re2r_id = str(uuid.uuid4())
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+        return [
+            _edition_dict(re2_id, "original", release_date=datetime(1998, 1, 1)),
+            _edition_dict(re2r_id, "remake", parent_game_id=re2_id, release_date=datetime(2019, 1, 1)),
+        ]
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        results = await search_catalog(ctx, "resident evil 2", 10)
+
+    result_ids = [r["id"] for r in results]
+    assert re2_id in result_ids
+    assert re2r_id in result_ids
+
+
+# T12
+async def test_search_owned_games_no_collapse(session_factory, monkeypatch):
+    """search_owned_games retourne Original et Remaster sans collapse."""
+    ds_id = str(uuid.uuid4())
+    dsr_id = str(uuid.uuid4())
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+        return [
+            _edition_dict(ds_id, "original", release_date=datetime(2012, 1, 1)),
+            _edition_dict(dsr_id, "remaster", parent_game_id=ds_id, release_date=datetime(2018, 1, 1)),
+        ]
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        user = User(
+            id=uuid.uuid4(),
+            email="ownedgames@test.fr",
+            username="ownedgames",
+            hashed_password=_password_helper.hash("password"),
+            is_active=True,
+            is_verified=True,
+            is_superuser=False,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        ctx = RunContext(deps=AgentDeps(db=db, user=user), model=TestModel(), usage=RunUsage())
+        results = await search_owned_games(ctx, "souls", 10)
+
+    result_ids = [r["id"] for r in results]
+    assert ds_id in result_ids
+    assert dsr_id in result_ids

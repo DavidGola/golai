@@ -146,6 +146,8 @@ async def upsert_game(
     game.title = title
     game.summary = igdb_game.get("summary")
     game.storyline = igdb_game.get("storyline")
+    _IGDB_CATEGORY_TO_EDITION = {8: "remake", 9: "remaster", 10: "expanded"}
+    game.edition_type = _IGDB_CATEGORY_TO_EDITION.get(igdb_game.get("category") or 0, "original")
     game.developer = _extract_developer(igdb_game.get("involved_companies") or [])
     cover = igdb_game.get("cover")
     game.cover_url = _cover_url(cover.get("image_id") if cover else None)

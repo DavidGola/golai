@@ -54,9 +54,10 @@ fields id, name, summary, storyline, first_release_date, total_rating, total_rat
        cover.image_id,
        external_games.category, external_games.uid,
        websites.url,
+       category, parent_game, version_parent,
        updated_at;
 sort total_rating_count desc;
-where total_rating_count > 50 & category = null;
+where total_rating_count > 50 & (category = null | category = 8 | category = 9 | category = 10);
 limit {min(limit, 500)};
 offset {offset};
 """
@@ -75,11 +76,12 @@ fields id, name, summary, storyline, first_release_date, total_rating, total_rat
        cover.image_id,
        external_games.category, external_games.uid,
        websites.url,
+       category, parent_game, version_parent,
        updated_at;
 where first_release_date > {since_ts}
       & total_rating_count > 10
       & total_rating > 65
-      & category = null;
+      & (category = null | category = 8 | category = 9 | category = 10);
 sort first_release_date desc;
 limit 500;
 offset {offset};
@@ -101,11 +103,12 @@ fields id, name, summary, storyline, first_release_date, total_rating, total_rat
        cover.image_id,
        external_games.category, external_games.uid,
        websites.url,
+       category, parent_game, version_parent,
        updated_at;
 where first_release_date > {now_ts}
       & first_release_date < {until_ts}
       & (hypes > 10 | follows > 50)
-      & category = null;
+      & (category = null | category = 8 | category = 9 | category = 10);
 sort hypes desc;
 limit 500;
 offset {offset};
@@ -125,9 +128,33 @@ fields id, name, summary, storyline, first_release_date, total_rating, total_rat
        cover.image_id,
        external_games.category, external_games.uid,
        websites.url,
+       category, parent_game, version_parent,
        updated_at;
-where updated_at > {since_ts} & category = null;
+where updated_at > {since_ts} & (category = null | category = 8 | category = 9 | category = 10);
 limit 500;
+"""
+    return await _post(client, "games", query)
+
+
+async def fetch_editions(client: httpx.AsyncClient, offset: int = 0) -> list[dict]:
+    """Fetche uniquement les catégories 8/9/10 (remake, remaster, expanded)."""
+    query = f"""
+fields id, name, summary, storyline, first_release_date, total_rating, total_rating_count,
+       genres.id, genres.name, genres.slug,
+       platforms.id, platforms.name, platforms.slug,
+       game_modes.id, game_modes.name, game_modes.slug,
+       themes.id, themes.name, themes.slug,
+       keywords.name,
+       involved_companies.company.name, involved_companies.developer,
+       cover.image_id,
+       external_games.category, external_games.uid,
+       websites.url,
+       category, parent_game, version_parent,
+       updated_at;
+where category = 8 | category = 9 | category = 10;
+sort total_rating_count desc;
+limit 500;
+offset {offset};
 """
     return await _post(client, "games", query)
 

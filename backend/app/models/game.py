@@ -67,6 +67,12 @@ class Game(Base):
     psn_id: Mapped[str | None] = mapped_column(String(64), unique=True, index=True)
     xbox_id: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
 
+    # Editions (ADR-0020)
+    parent_game_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("games.id"), nullable=True, index=True
+    )
+    edition_type: Mapped[str] = mapped_column(String, nullable=False, server_default="original")
+
     ingestion_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())

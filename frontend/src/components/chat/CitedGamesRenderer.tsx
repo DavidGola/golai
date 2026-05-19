@@ -39,20 +39,16 @@ export default function CitedGamesRenderer({ content, citedGames }: Props) {
           key={i}
           style={{
             display: 'flex',
-            gap: 12,
-            alignItems: 'flex-start',
+            flexDirection: 'column',
+            gap: 8,
           }}
         >
           {seg.game && (
-            <div style={{ flexShrink: 0, width: 90 }}>
+            <div style={{ width: 90 }}>
               <GameInlineCard game={seg.game} />
             </div>
           )}
-          {!seg.game && <div style={{ width: 0 }} />}
-          <div
-            className="prose prose-invert prose-sm max-w-none"
-            style={{ flex: 1, minWidth: 0 }}
-          >
+          <div className="prose prose-invert prose-sm max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.text}</ReactMarkdown>
           </div>
         </div>

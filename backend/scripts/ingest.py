@@ -34,6 +34,7 @@ from app.database import AsyncSessionLocal
 from app.models.game import Game
 from app.seed.embeddings import generate_embeddings
 from app.seed.games import upsert_game
+from app.services.igdb_edition_resolver import resolve_parent_links
 from app.sources import summarizer
 from app.sources.igdb import fetch_recent_games, fetch_top_games, fetch_upcoming_games
 from sqlalchemy import select, update
@@ -90,13 +91,22 @@ async def _sync_phase(
                     logger.info("[%s] No more games at offset %d, done.", phase, batch_start)
                     break
 
+                parent_links: dict[int, int] = {}
                 for igdb_game in tqdm(igdb_games, desc=f"{phase} offset={batch_start}"):
                     try:
                         await upsert_game(session, client, igdb_game, force=force)
                         total += 1
+                        parent_igdb_id = igdb_game.get("parent_game") or igdb_game.get("version_parent")
+                        if parent_igdb_id:
+                            parent_links[igdb_game["id"]] = parent_igdb_id
                     except Exception as exc:
                         logger.error("[%s] upsert failed: %s", igdb_game.get("name", "?"), exc)
                         await session.rollback()
+
+                # Pass 2 : résolution des parent_game_id
+                if parent_links:
+                    await resolve_parent_links(session, parent_links)
+                    await session.commit()
 
                 state["offset"] = batch_start + len(igdb_games)
                 _save_state(phase, state)
