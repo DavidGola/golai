@@ -1,5 +1,5 @@
 """PSN source — thin wrapper around psnawp isolating Sony API volatility."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from psnawp_api import PSNAWP
@@ -12,6 +12,14 @@ from psnawp_api.core.psnawp_exceptions import (
 )
 from requests.exceptions import ConnectionError, Timeout
 
+# Mapping psnawp PlatformType string → nom IGDB en base
+_PSN_PLATFORM_TO_DB: dict[str, str] = {
+    "PS3": "PlayStation 3",
+    "PS4": "PlayStation 4",
+    "PS5": "PlayStation 5",
+    "PSVITA": "PlayStation Vita",
+}
+
 
 @dataclass
 class PSNGameDTO:
@@ -20,6 +28,7 @@ class PSNGameDTO:
     cover_url: str | None
     trophy_progress_pct: int | None
     hours_played: float | None
+    platforms: frozenset[str] = field(default_factory=frozenset)  # noms IGDB DB
 
 
 def check_npsso(npsso: str) -> None:
@@ -73,11 +82,17 @@ def fetch_library(npsso: str, online_id: str) -> list[PSNGameDTO]:
         hours = None
         if stats is not None and stats.play_duration:
             hours = round(stats.play_duration.total_seconds() / 3600, 1)
+        db_platforms = frozenset(
+            _PSN_PLATFORM_TO_DB[p.value]
+            for p in t.title_platform
+            if p.value in _PSN_PLATFORM_TO_DB
+        )
         result.append(PSNGameDTO(
             psn_id=t.np_communication_id,
             title=title_name,
             cover_url=t.title_icon_url,
             trophy_progress_pct=t.progress,
             hours_played=hours,
+            platforms=db_platforms,
         ))
     return result

@@ -40,6 +40,7 @@ class ExternalOwnedGame:
     playtime_minutes: int | None = None     # Steam
     completion_pct: int | None = None       # PSN trophy %, Xbox achievement %
     extra_store_url: str | None = None      # Xbox marketplace URL
+    platforms: frozenset[str] = frozenset()  # noms IGDB DB (ex: {"PlayStation 4"})
 
 
 @dataclass
@@ -125,14 +126,41 @@ def suggest_status_from_completion_pct(pct: int | None) -> UserGameStatus | None
 
 
 async def _fuzzy_match_by_title(
-    db: AsyncSession, title: str, source_id_attr: str
+    db: AsyncSession,
+    title: str,
+    source_id_attr: str,
+    platforms: frozenset[str] = frozenset(),
 ) -> Game | None:
-    """Match pg_trgm sur le titre, en excluant les rows déjà tagged par cette source."""
+    """Match pg_trgm sur le titre, en excluant les rows déjà tagged par cette source.
+
+    Si `platforms` est fourni, filtre d'abord par plateforme (JOIN games_platforms).
+    Fallback sur un match titre seul si aucun résultat avec filtre plateforme.
+    """
+    base_where = f"{source_id_attr} IS NULL AND similarity(title, :title) >= 0.6"
+    order = f"ORDER BY similarity(title, :title) DESC LIMIT 1"
+
+    if platforms:
+        platform_list = list(platforms)
+        result = await db.execute(
+            text(
+                f"SELECT g.id FROM games g "
+                f"JOIN games_platforms gp ON gp.game_id = g.id "
+                f"JOIN platforms p ON p.id = gp.platform_id "
+                f"WHERE g.{base_where} AND p.name = ANY(:platforms) "
+                f"{order}"
+            ),
+            {"title": title, "platforms": platform_list},
+        )
+        row = result.fetchone()
+        if row:
+            return await db.get(Game, row[0])
+
+    # Fallback : match titre seul (pas de données plateforme en base)
     result = await db.execute(
         text(
             f"SELECT id FROM games "
-            f"WHERE {source_id_attr} IS NULL AND similarity(title, :title) >= 0.6 "
-            f"ORDER BY similarity(title, :title) DESC LIMIT 1"
+            f"WHERE {base_where} "
+            f"{order}"
         ),
         {"title": title},
     )
@@ -176,7 +204,7 @@ async def build_preview_generic(
             continue
 
         if source.use_fuzzy_title_match:
-            matched = await _fuzzy_match_by_title(db, ext.title, source.game_source_id_attr)
+            matched = await _fuzzy_match_by_title(db, ext.title, source.game_source_id_attr, ext.platforms)
             if matched is not None:
                 games_by_source_id[ext.source_id] = matched
                 continue

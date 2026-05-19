@@ -42,6 +42,7 @@ class PSNSource:
                 playtime_minutes=(
                     int(dto.hours_played * 60) if dto.hours_played is not None else None
                 ),
+                platforms=dto.platforms,
             )
             for dto in dtos
         ]

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.sources.psn import PSNGameDTO, check_npsso, fetch_library
+from app.sources.psn import check_npsso, fetch_library
 
 
 def _make_trophy_title(
@@ -59,6 +59,34 @@ def test_fetch_library_happy_path_with_playtime(mock_psnawp_cls):
     assert item.title == "God of War"
     assert item.trophy_progress_pct == 75
     assert item.hours_played == 12.5
+
+
+@patch("app.sources.psn.PSNAWP")
+def test_fetch_library_platforms_mapped_to_igdb_names(mock_psnawp_cls):
+    trophy = _make_trophy_title()
+    ps4 = MagicMock()
+    ps4.value = "PS4"
+    ps5 = MagicMock()
+    ps5.value = "PS5"
+    trophy.title_platform = [ps4, ps5]
+    _setup_client(mock_psnawp_cls, [trophy], [])
+
+    result = fetch_library(npsso="valid_npsso", online_id="AnyUser")
+
+    assert result[0].platforms == frozenset({"PlayStation 4", "PlayStation 5"})
+
+
+@patch("app.sources.psn.PSNAWP")
+def test_fetch_library_unknown_platform_ignored(mock_psnawp_cls):
+    trophy = _make_trophy_title()
+    unknown = MagicMock()
+    unknown.value = "UNKNOWN"
+    trophy.title_platform = [unknown]
+    _setup_client(mock_psnawp_cls, [trophy], [])
+
+    result = fetch_library(npsso="valid_npsso", online_id="AnyUser")
+
+    assert result[0].platforms == frozenset()
 
 
 @patch("app.sources.psn.PSNAWP")
