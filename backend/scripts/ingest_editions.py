@@ -29,7 +29,10 @@ import httpx
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
+from sqlalchemy import update
+
 from app.database import AsyncSessionLocal
+from app.models.game import Game
 from app.seed.embeddings import generate_embeddings
 from app.seed.games import upsert_game
 from app.services.igdb_edition_resolver import resolve_parent_links
@@ -54,16 +57,10 @@ async def main() -> None:
                     logger.info("No more editions at offset %d — done.", offset)
                     break
 
-                _EDITION_MAP = {8: "remake", 9: "remaster", 10: "expanded"}
-
                 parent_links: dict[int, int] = {}
                 for igdb_game in tqdm(games, desc=f"offset={offset}"):
                     try:
-                        game = await upsert_game(session, client, igdb_game, force=False)
-                        # Toujours synchroniser edition_type même si le jeu existait déjà
-                        cat = igdb_game.get("category")
-                        if cat in _EDITION_MAP:
-                            game.edition_type = _EDITION_MAP[cat]
+                        await upsert_game(session, client, igdb_game, force=False)
                         total_inserted += 1
                         parent_igdb_id = igdb_game.get("parent_game") or igdb_game.get("version_parent")
                         if parent_igdb_id:
@@ -80,6 +77,26 @@ async def main() -> None:
                 offset += len(games)
 
     logger.info("Sync done — %d editions inserted, %d parent links resolved", total_inserted, total_resolved)
+
+    # Rattrapage titre pour les jeux que IGDB ne catégorise pas (ex: Dark Souls Remastered)
+    async with AsyncSessionLocal() as session:
+        res = await session.execute(
+            update(Game)
+            .where(Game.edition_type == "original")
+            .where(Game.title.ilike("%remaster%"))
+            .values(edition_type="remaster")
+            .returning(Game.id)
+        )
+        logger.info("%d jeux mis à jour en remaster via titre", len(res.all()))
+        res = await session.execute(
+            update(Game)
+            .where(Game.edition_type == "original")
+            .where(Game.title.ilike("%remake%"))
+            .values(edition_type="remake")
+            .returning(Game.id)
+        )
+        logger.info("%d jeux mis à jour en remake via titre", len(res.all()))
+        await session.commit()
 
     logger.info("Generating embeddings for new games ...")
     async with AsyncSessionLocal() as session:
