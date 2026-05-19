@@ -54,10 +54,16 @@ async def main() -> None:
                     logger.info("No more editions at offset %d — done.", offset)
                     break
 
+                _EDITION_MAP = {8: "remake", 9: "remaster", 10: "expanded"}
+
                 parent_links: dict[int, int] = {}
                 for igdb_game in tqdm(games, desc=f"offset={offset}"):
                     try:
-                        await upsert_game(session, client, igdb_game, force=False)
+                        game = await upsert_game(session, client, igdb_game, force=False)
+                        # Toujours synchroniser edition_type même si le jeu existait déjà
+                        cat = igdb_game.get("category")
+                        if cat in _EDITION_MAP:
+                            game.edition_type = _EDITION_MAP[cat]
                         total_inserted += 1
                         parent_igdb_id = igdb_game.get("parent_game") or igdb_game.get("version_parent")
                         if parent_igdb_id:
