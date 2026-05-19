@@ -19,7 +19,6 @@ from datetime import UTC, datetime
 from typing import Any, Callable, Protocol
 
 from sqlalchemy import select, text
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.game import Game
@@ -279,11 +278,7 @@ async def confirm_import_generic(
 
     setattr(user, source.user_account_attr, account_value)
     setattr(user, source.user_sync_at_attr, datetime.now(UTC).replace(tzinfo=None))
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        raise ValueError(f"{source.source_name}_account_already_claimed")
+    await db.commit()
     return imported, skipped
 
 
