@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Protocol
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai import messages as pai_messages
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
@@ -152,25 +152,29 @@ catalog_toolset: FunctionToolset[HasDb] = FunctionToolset()
 
 
 @catalog_toolset.tool
-async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
-    """Recherche des jeux dans le catalogue pour la découverte. En auth, exclut automatiquement les jeux déjà joués (>= 2h ou completed/dropped). Pour comparer/discuter des jeux déjà possédés, utilise search_owned_games."""
+async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k, prefer_popular: bool = True) -> list[dict]:
+    """Recherche des jeux dans le catalogue pour la découverte. En auth, exclut automatiquement les jeux déjà joués (>= 2h ou completed/dropped). Pour comparer/discuter des jeux déjà possédés, utilise search_owned_games.
+    prefer_popular=True (défaut) : privilégie les jeux connus à pertinence comparable. Passe False uniquement sur demande explicite d'obscur (surprends-moi, pépites méconnues, indé pointu)."""
     exclude_ids = None
     if isinstance(ctx.deps, AgentDeps):
         played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
         exclude_ids = played if played else None
-    rows = await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids)
+    alpha = settings.rag_notoriety_alpha if prefer_popular else 0.0
+    rows = await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids, alpha=alpha)
     return collapse_editions(rows)
 
 
 @catalog_toolset.tool
-async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
-    """Lance plusieurs recherches catalogue en parallèle avec des formulations différentes et déduplique les résultats. Même filtre Backlog que search_catalog."""
+async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k, prefer_popular: bool = True) -> list[dict]:
+    """Lance plusieurs recherches catalogue en parallèle avec des formulations différentes et déduplique les résultats. Même filtre Backlog que search_catalog.
+    prefer_popular=True (défaut) : privilégie les jeux connus à pertinence comparable. Passe False uniquement sur demande explicite d'obscur."""
     exclude_ids = None
     if isinstance(ctx.deps, AgentDeps):
         played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
         exclude_ids = played if played else None
+    alpha = settings.rag_notoriety_alpha if prefer_popular else 0.0
     batches: list[list[dict]] = list(
-        await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k, exclude_ids=exclude_ids) for q in queries])
+        await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k, exclude_ids=exclude_ids, alpha=alpha) for q in queries])
     )
     seen_ids: set[str] = set()
     merged: list[dict] = []
@@ -195,6 +199,8 @@ async def search_owned_games(ctx: RunContext[AgentDeps], query: str, top_k: int 
 
 _model, _model_settings = _build_model()
 
+_SEARCH_TOOLS = frozenset({"search_catalog", "search_catalog_multi", "search_owned_games"})
+
 agent: Agent[AgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
@@ -202,7 +208,54 @@ agent: Agent[AgentDeps, str] = Agent(
     toolsets=[catalog_toolset, owned_toolset],
     name="golai-auth-agent",
     instrument=get_agent_instrumentation(),
+    output_retries=2,
 )
+
+
+@agent.output_validator
+async def validate_grounded(ctx: RunContext[AgentDeps], response: str) -> str:
+    from sqlalchemy import text as sa_text
+    from app.ai.guardrails import build_allowlist, find_ungrounded_titles
+
+    # Collect search results returned by tools this turn
+    search_results: list[dict] = []
+    for msg in ctx.messages:
+        if isinstance(msg, pai_messages.ModelRequest):
+            for part in msg.parts:
+                if (
+                    isinstance(part, pai_messages.ToolReturnPart)
+                    and part.tool_name in _SEARCH_TOOLS
+                    and isinstance(part.content, list)
+                ):
+                    search_results.extend(part.content)
+
+    # Fetch library titles (light query — titles only)
+    rows = await ctx.deps.db.execute(
+        sa_text(
+            "SELECT g.title FROM user_games ug"
+            " JOIN games g ON g.id = ug.game_id"
+            " WHERE ug.user_id = :uid"
+        ),
+        {"uid": ctx.deps.user.id},
+    )
+    library_titles = [row.title for row in rows]
+
+    user_message = str(ctx.prompt) if ctx.prompt else ""
+    allowlist = build_allowlist(search_results, library_titles, user_message)
+    ungrounded = find_ungrounded_titles(response, allowlist)
+
+    if ungrounded:
+        titles_str = ", ".join(f'"{t}"' for t in ungrounded)
+        if ctx.last_attempt:
+            # Retourner la réponse telle quelle plutôt qu'un message d'erreur inutile.
+            # Le grounding a fait son travail (2 retries), on préfère une réponse imparfaite
+            # à un dead-end qui dégrade l'UX.
+            return response
+        raise ModelRetry(
+            f"Tu as cité {titles_str} sans passer par search_catalog. "
+            "Appelle search_catalog avec ces titres et ne recommande que les résultats obtenus."
+        )
+    return response
 
 
 @agent.system_prompt

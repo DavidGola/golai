@@ -27,6 +27,8 @@ class EvalExpected(BaseModel):
     must_not_cite: list[str] = Field(default_factory=list)
     must_cite_property: MustCiteProperty | None = None
     min_word_count: int | None = None
+    min_notoriety_score: float | None = None  # seuil calibré à 0.6 (60e percentile, run 2026-06-19)
+    max_hallucination_rate: float | None = None  # seuil calibré à 0.1 (tolérance trigram, run 2026-06-19)
     dimensions: EvalDimensions = Field(default_factory=EvalDimensions)
 
 
@@ -49,6 +51,7 @@ class EvalMetadata(BaseModel):
     tags: list[str] = Field(default_factory=list)
     profile: EvalProfile = Field(default_factory=EvalProfile)
     library: list[EvalLibraryGame] = Field(default_factory=list)
+    prior_turns: list[str] = Field(default_factory=list)
 
 
 class EvalItem(BaseModel):

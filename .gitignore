@@ -51,3 +51,7 @@ _bmad*
 
 # Ingest cache (reviews, batches, state)
 .cache/
+
+DESCRIPTION.*
+entretien*
+TODO_TEST.md
