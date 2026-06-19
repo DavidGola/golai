@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Protocol
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai import messages as pai_messages
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
@@ -199,6 +199,8 @@ async def search_owned_games(ctx: RunContext[AgentDeps], query: str, top_k: int 
 
 _model, _model_settings = _build_model()
 
+_SEARCH_TOOLS = frozenset({"search_catalog", "search_catalog_multi", "search_owned_games"})
+
 agent: Agent[AgentDeps, str] = Agent(
     model=_model,
     model_settings=_model_settings,
@@ -206,7 +208,54 @@ agent: Agent[AgentDeps, str] = Agent(
     toolsets=[catalog_toolset, owned_toolset],
     name="golai-auth-agent",
     instrument=get_agent_instrumentation(),
+    output_retries=2,
 )
+
+
+@agent.output_validator
+async def validate_grounded(ctx: RunContext[AgentDeps], response: str) -> str:
+    from sqlalchemy import text as sa_text
+    from app.ai.guardrails import build_allowlist, find_ungrounded_titles
+
+    # Collect search results returned by tools this turn
+    search_results: list[dict] = []
+    for msg in ctx.messages:
+        if isinstance(msg, pai_messages.ModelRequest):
+            for part in msg.parts:
+                if (
+                    isinstance(part, pai_messages.ToolReturnPart)
+                    and part.tool_name in _SEARCH_TOOLS
+                    and isinstance(part.content, list)
+                ):
+                    search_results.extend(part.content)
+
+    # Fetch library titles (light query — titles only)
+    rows = await ctx.deps.db.execute(
+        sa_text(
+            "SELECT g.title FROM user_games ug"
+            " JOIN games g ON g.id = ug.game_id"
+            " WHERE ug.user_id = :uid"
+        ),
+        {"uid": ctx.deps.user.id},
+    )
+    library_titles = [row.title for row in rows]
+
+    user_message = str(ctx.prompt) if ctx.prompt else ""
+    allowlist = build_allowlist(search_results, library_titles, user_message)
+    ungrounded = find_ungrounded_titles(response, allowlist)
+
+    if ungrounded:
+        titles_str = ", ".join(f'"{t}"' for t in ungrounded)
+        if ctx.last_attempt:
+            return (
+                "Je n'ai pas trouvé de jeu correspondant dans le catalogue pour cette demande. "
+                "Essaie de reformuler ou de me donner plus de contexte."
+            )
+        raise ModelRetry(
+            f"Tu as cité {titles_str} sans passer par search_catalog. "
+            "Appelle search_catalog avec ces titres et ne recommande que les résultats obtenus."
+        )
+    return response
 
 
 @agent.system_prompt

@@ -9,6 +9,55 @@ from sqlalchemy.ext.asyncio import AsyncSession
 _BOLD = re.compile(r"\*\*([^*]{2,80})\*\*")
 _QUOTED = re.compile(r'"([^"]{3,80})"')
 
+
+def _normalize(title: str) -> str:
+    """Lowercase, strip punctuation, collapse whitespace."""
+    return re.sub(r"[^\w\s]", "", title).lower().strip()
+
+
+def find_ungrounded_titles(response_text: str, allowlist: set[str]) -> list[str]:
+    """Return bold titles in response_text not grounded in allowlist.
+
+    Grounding uses tolerant substring matching so "Sekiro" grounds
+    "Sekiro: Shadows Die Twice" and vice-versa.
+    """
+    detected = _BOLD.findall(response_text)
+    if not detected:
+        return []
+    normalized_allowlist = [_normalize(t) for t in allowlist if t]
+    ungrounded: list[str] = []
+    for title in detected:
+        norm = _normalize(title)
+        if not norm:
+            continue
+        grounded = any(
+            norm in al or al in norm
+            for al in normalized_allowlist
+            if al
+        )
+        if not grounded:
+            ungrounded.append(title)
+    return ungrounded
+
+
+def build_allowlist(
+    search_results: list[dict],
+    library_titles: list[str],
+    user_message: str,
+) -> set[str]:
+    """Build allowlist from current-turn search results, Library, and user message."""
+    titles: set[str] = set()
+    for g in search_results:
+        t = g.get("title")
+        if t:
+            titles.add(t)
+    for t in library_titles:
+        if t:
+            titles.add(t)
+    if user_message:
+        titles.add(user_message)
+    return titles
+
 _MATCH_THRESHOLD = 0.4
 
 
