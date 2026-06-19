@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     litellm_model: str = "anthropic/claude-sonnet-4-5"
     chat_history_window: int = 20
     rag_top_k: int = 8
+    rag_candidate_pool: int = 40
+    rag_notoriety_alpha: float = 0.35
     backend_cors_origins: str = "http://localhost:5173"
     allow_anonymous_chat: bool = True
     chat_rate_limit_enabled: bool = True

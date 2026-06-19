@@ -152,25 +152,29 @@ catalog_toolset: FunctionToolset[HasDb] = FunctionToolset()
 
 
 @catalog_toolset.tool
-async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k) -> list[dict]:
-    """Recherche des jeux dans le catalogue pour la découverte. En auth, exclut automatiquement les jeux déjà joués (>= 2h ou completed/dropped). Pour comparer/discuter des jeux déjà possédés, utilise search_owned_games."""
+async def search_catalog(ctx: RunContext[HasDb], query: str, top_k: int = settings.rag_top_k, prefer_popular: bool = True) -> list[dict]:
+    """Recherche des jeux dans le catalogue pour la découverte. En auth, exclut automatiquement les jeux déjà joués (>= 2h ou completed/dropped). Pour comparer/discuter des jeux déjà possédés, utilise search_owned_games.
+    prefer_popular=True (défaut) : privilégie les jeux connus à pertinence comparable. Passe False uniquement sur demande explicite d'obscur (surprends-moi, pépites méconnues, indé pointu)."""
     exclude_ids = None
     if isinstance(ctx.deps, AgentDeps):
         played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
         exclude_ids = played if played else None
-    rows = await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids)
+    alpha = settings.rag_notoriety_alpha if prefer_popular else 0.0
+    rows = await retrieve_games(ctx.deps.db, query, top_k, exclude_ids=exclude_ids, alpha=alpha)
     return collapse_editions(rows)
 
 
 @catalog_toolset.tool
-async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k) -> list[dict]:
-    """Lance plusieurs recherches catalogue en parallèle avec des formulations différentes et déduplique les résultats. Même filtre Backlog que search_catalog."""
+async def search_catalog_multi(ctx: RunContext[HasDb], queries: list[str], top_k: int = settings.rag_top_k, prefer_popular: bool = True) -> list[dict]:
+    """Lance plusieurs recherches catalogue en parallèle avec des formulations différentes et déduplique les résultats. Même filtre Backlog que search_catalog.
+    prefer_popular=True (défaut) : privilégie les jeux connus à pertinence comparable. Passe False uniquement sur demande explicite d'obscur."""
     exclude_ids = None
     if isinstance(ctx.deps, AgentDeps):
         played = await played_game_ids(ctx.deps.db, ctx.deps.user.id)
         exclude_ids = played if played else None
+    alpha = settings.rag_notoriety_alpha if prefer_popular else 0.0
     batches: list[list[dict]] = list(
-        await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k, exclude_ids=exclude_ids) for q in queries])
+        await asyncio.gather(*[retrieve_games(ctx.deps.db, q, top_k, exclude_ids=exclude_ids, alpha=alpha) for q in queries])
     )
     seen_ids: set[str] = set()
     merged: list[dict] = []

@@ -11,7 +11,10 @@ import pytest_asyncio
 from pydantic_ai import RunContext, RunUsage
 from pydantic_ai.models.test import TestModel
 
+import pytest
+
 from app.ai.agent import AgentDeps, AnonymousAgentDeps, anonymous_agent, search_catalog, search_catalog_multi, search_owned_games
+from app.config import settings
 from app.models.game import Game
 from app.models.user_game import UserGame, UserGameStatus
 from app.models.user import User
@@ -66,7 +69,7 @@ def _make_fake_retrieve(three_games: list[Game]):
     """Retourne une version mockée de retrieve_games qui filtre par exclude_ids."""
     all_games = [_make_game_dict(g) for g in three_games]
 
-    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
         if exclude_ids:
             return [g for g in all_games if uuid.UUID(g["id"]) not in exclude_ids]
         return list(all_games)
@@ -146,7 +149,7 @@ async def test_search_catalog_collapses_remaster(session_factory, monkeypatch):
     ds_id = str(uuid.uuid4())
     dsr_id = str(uuid.uuid4())
 
-    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
         return [
             _edition_dict(ds_id, "original", release_date=datetime(2012, 1, 1)),
             _edition_dict(dsr_id, "remaster", parent_game_id=ds_id, release_date=datetime(2018, 1, 1)),
@@ -169,7 +172,7 @@ async def test_search_catalog_keeps_both_for_remake(session_factory, monkeypatch
     re2_id = str(uuid.uuid4())
     re2r_id = str(uuid.uuid4())
 
-    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
         return [
             _edition_dict(re2_id, "original", release_date=datetime(1998, 1, 1)),
             _edition_dict(re2r_id, "remake", parent_game_id=re2_id, release_date=datetime(2019, 1, 1)),
@@ -192,7 +195,7 @@ async def test_search_owned_games_no_collapse(session_factory, monkeypatch):
     ds_id = str(uuid.uuid4())
     dsr_id = str(uuid.uuid4())
 
-    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None):
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
         return [
             _edition_dict(ds_id, "original", release_date=datetime(2012, 1, 1)),
             _edition_dict(dsr_id, "remaster", parent_game_id=ds_id, release_date=datetime(2018, 1, 1)),
@@ -219,3 +222,91 @@ async def test_search_owned_games_no_collapse(session_factory, monkeypatch):
     result_ids = [r["id"] for r in results]
     assert ds_id in result_ids
     assert dsr_id in result_ids
+
+
+# ─── Tests prefer_popular (M3 plumbing) ──────────────────────────────────────
+
+
+# T13
+async def test_search_catalog_prefer_popular_passes_notoriety_alpha(session_factory, monkeypatch):
+    """search_catalog avec prefer_popular=True passe rag_notoriety_alpha à retrieve_games."""
+    captured: dict = {}
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
+        captured["alpha"] = alpha
+        return []
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        await search_catalog(ctx, "game", 10, prefer_popular=True)
+
+    assert captured["alpha"] == pytest.approx(settings.rag_notoriety_alpha)
+
+
+# T14
+async def test_search_catalog_prefer_popular_false_passes_zero_alpha(session_factory, monkeypatch):
+    """search_catalog avec prefer_popular=False passe alpha=0.0 (ordre sémantique pur)."""
+    captured: dict = {}
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
+        captured["alpha"] = alpha
+        return []
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        await search_catalog(ctx, "game", 10, prefer_popular=False)
+
+    assert captured["alpha"] == 0.0
+
+
+# T15
+async def test_search_catalog_popular_ranks_above_niche_at_equal_similarity(session_factory, monkeypatch):
+    """search_catalog avec prefer_popular=True : à pertinence égale, le jeu populaire remonte."""
+    popular_id = str(uuid.uuid4())
+    niche_id = str(uuid.uuid4())
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
+        from app.ai.rerank import rerank_by_notoriety
+        candidates = [
+            {"id": niche_id,   "title": "Niche Game",   "similarity": 0.80, "p_steam": 0.05, "p_igdb": 0.05},
+            {"id": popular_id, "title": "Popular Game", "similarity": 0.80, "p_steam": 0.95, "p_igdb": 0.90},
+        ]
+        return rerank_by_notoriety(candidates, alpha)
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        results = await search_catalog(ctx, "game", 10, prefer_popular=True)
+
+    result_ids = [r["id"] for r in results]
+    assert result_ids.index(popular_id) < result_ids.index(niche_id)
+
+
+# T16
+async def test_search_catalog_prefer_popular_false_restores_semantic_order(session_factory, monkeypatch):
+    """search_catalog avec prefer_popular=False : l'ordre sémantique est préservé (alpha=0)."""
+    popular_id = str(uuid.uuid4())
+    niche_id = str(uuid.uuid4())
+
+    async def fake_retrieve(db, query, top_k=None, *, exclude_ids=None, alpha=0.0):
+        from app.ai.rerank import rerank_by_notoriety
+        # niche est légèrement plus pertinent sémantiquement
+        candidates = [
+            {"id": niche_id,   "title": "Niche Game",   "similarity": 0.85, "p_steam": 0.05, "p_igdb": 0.05},
+            {"id": popular_id, "title": "Popular Game", "similarity": 0.70, "p_steam": 0.95, "p_igdb": 0.90},
+        ]
+        return rerank_by_notoriety(candidates, alpha)
+
+    monkeypatch.setattr("app.ai.agent.retrieve_games", fake_retrieve)
+
+    async with session_factory() as db:
+        ctx = RunContext(deps=AnonymousAgentDeps(db=db), model=TestModel(), usage=RunUsage())
+        results = await search_catalog(ctx, "game", 10, prefer_popular=False)
+
+    result_ids = [r["id"] for r in results]
+    assert result_ids.index(niche_id) < result_ids.index(popular_id)
