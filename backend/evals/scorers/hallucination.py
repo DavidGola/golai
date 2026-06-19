@@ -8,7 +8,8 @@ from evals.schema import EvalItem
 
 
 async def score_hallucination(item: EvalItem, output: str, db: AsyncSession) -> float | None:
-    if not item.metadata.library:
+    # Toujours checker si un taux max est explicitement attendu (ex : grounding multi-tour sans library)
+    if not item.metadata.library and item.expected.max_hallucination_rate is None:
         return None
 
     candidates = extract_candidate_titles(output)

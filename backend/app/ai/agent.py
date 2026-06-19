@@ -247,10 +247,10 @@ async def validate_grounded(ctx: RunContext[AgentDeps], response: str) -> str:
     if ungrounded:
         titles_str = ", ".join(f'"{t}"' for t in ungrounded)
         if ctx.last_attempt:
-            return (
-                "Je n'ai pas trouvé de jeu correspondant dans le catalogue pour cette demande. "
-                "Essaie de reformuler ou de me donner plus de contexte."
-            )
+            # Retourner la réponse telle quelle plutôt qu'un message d'erreur inutile.
+            # Le grounding a fait son travail (2 retries), on préfère une réponse imparfaite
+            # à un dead-end qui dégrade l'UX.
+            return response
         raise ModelRetry(
             f"Tu as cité {titles_str} sans passer par search_catalog. "
             "Appelle search_catalog avec ces titres et ne recommande que les résultats obtenus."

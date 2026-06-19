@@ -26,11 +26,12 @@ if str(BACKEND_DIR) not in sys.path:
 os.environ.setdefault("LANGFUSE_ENABLED", "false")
 
 from app.database import AsyncSessionLocal
-from evals.run_langfuse_dataset import run_dataset_item
+from evals.run_langfuse_dataset import run_dataset_item, run_dataset_item_multiturn
 from evals.schema import EvalDataset, EvalItem
 from evals.scorers.deterministic import score_item
 from evals.scorers.hallucination import score_hallucination
 from evals.scorers.judge import judge_item
+from evals.scorers.notoriety import score_notoriety
 
 DATASET_V2_PATH = BACKEND_DIR / "evals" / "datasets" / "golai_library_v2.json"
 BASELINE_PATH = BACKEND_DIR / "evals" / "baseline_v1.json"
@@ -72,10 +73,15 @@ def _is_connection_error(exc: Exception) -> bool:
 
 async def evaluate_item(item: EvalItem, no_judge: bool = False, verbose: bool = False) -> dict:
     agent_result: dict = {}
-    # Retry once on transient HTTP connection errors (stale pool connection after idle timeout).
+    runner_dict = item.to_runner_dict()
+    prior_turns = item.metadata.prior_turns
+
     for attempt in range(2):
         try:
-            agent_result = await run_dataset_item(item.to_runner_dict())
+            if prior_turns:
+                agent_result = await run_dataset_item_multiturn(runner_dict, prior_turns)
+            else:
+                agent_result = await run_dataset_item(runner_dict)
             break
         except Exception as exc:
             if attempt == 1 or not _is_connection_error(exc):
@@ -92,6 +98,12 @@ async def evaluate_item(item: EvalItem, no_judge: bool = False, verbose: bool = 
     async with AsyncSessionLocal() as db:
         det_scores = await score_item(item, output, db)
         hall_rate = await score_hallucination(item, output, db)
+        notoriety_score = await score_notoriety(item, output, db)
+
+    max_hall = item.expected.max_hallucination_rate
+    hall_pass: bool | None = None
+    if max_hall is not None and hall_rate is not None:
+        hall_pass = hall_rate <= max_hall
 
     if no_judge:
         judge_scores: dict[str, int | None] = {}
@@ -99,7 +111,13 @@ async def evaluate_item(item: EvalItem, no_judge: bool = False, verbose: bool = 
     else:
         judge_scores, reason = await judge_item(item, output)
 
-    scores = {**det_scores, "hallucination_rate": hall_rate, **judge_scores}
+    scores = {
+        **det_scores,
+        "hallucination_rate": hall_rate,
+        "hallucination_pass": float(hall_pass) if hall_pass is not None else None,
+        "notoriety_score": notoriety_score,
+        **judge_scores,
+    }
 
     if verbose:
         print(f"Scores: {json.dumps(scores, indent=2, ensure_ascii=False)}")
@@ -157,6 +175,8 @@ async def run_dataset(
 
     metrics = {
         "hallucination_rate": avg("hallucination_rate"),
+        "hallucination_pass_rate": avg("hallucination_pass"),
+        "notoriety_mean": avg("notoriety_score"),
         "library_anchor_rate": avg("library_anchor_rate"),
         "must_cite_pass_rate": avg("must_cite_one_of"),
         "must_not_cite_pass_rate": avg("must_not_cite"),

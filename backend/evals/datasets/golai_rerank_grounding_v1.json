@@ -1,0 +1,54 @@
+{
+  "name": "golai-rerank-grounding-v1",
+  "description": "Evals de régression pour le re-rank notoriété (issue 01) et le grounding multi-tour (issue 02).",
+  "metadata": {
+    "version": 1,
+    "domain": "golai"
+  },
+  "items": [
+    {
+      "id": "rerank-notoriete-5-solo",
+      "input": "Recommande-moi 5 jeux solo en aventure narrative, je veux de belles histoires.",
+      "metadata": {
+        "tags": ["rerank", "notoriete", "recommendation", "catalog"],
+        "profile": {
+          "preferred_playtime": "long",
+          "favorite_genres": ["Action", "RPG", "Aventure"],
+          "important_criteria": ["Narration", "Histoire"]
+        },
+        "library": [
+          { "title": "Hades", "status": "completed", "user_rating": 9, "genres": ["Action", "Roguelite"], "hltb_main": 22 },
+          { "title": "Stardew Valley", "status": "completed", "user_rating": 8, "genres": ["Simulation", "RPG"], "hltb_main": 53 },
+          { "title": "Celeste", "status": "completed", "user_rating": 9, "genres": ["Plateforme", "Action"], "hltb_main": 10 }
+        ]
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "min_notoriety_score": 0.6,
+        "dimensions": {
+          "no_hallucination": true,
+          "expert_tone": true
+        }
+      }
+    },
+    {
+      "id": "grounding-multiturn-ghost",
+      "input": "Propose d'autres jeux dans le même style.",
+      "metadata": {
+        "tags": ["grounding", "multiturn", "hallucination"],
+        "prior_turns": ["Je veux un jeu comme Ghost of Tsushima."],
+        "profile": {},
+        "library": []
+      },
+      "expected": {
+        "must_cite_one_of": [],
+        "must_not_cite": [],
+        "max_hallucination_rate": 0.1,
+        "dimensions": {
+          "no_hallucination": true
+        }
+      }
+    }
+  ]
+}

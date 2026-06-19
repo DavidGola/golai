@@ -259,7 +259,7 @@ async def load_eval_user_for_agent(db: AsyncSession, user_id: uuid.UUID) -> User
 
 
 async def run_dataset_item(item: dict[str, Any]) -> dict[str, Any]:
-    from app.ai.agent import AgentDeps
+    from app.ai.agent import AgentDeps, agent as auth_agent
     from app.ai.stream import stream_agent
 
     async with AsyncSessionLocal() as db:
@@ -272,7 +272,7 @@ async def run_dataset_item(item: dict[str, Any]) -> dict[str, Any]:
             tools: list[str] = []
             usage: dict[str, Any] = {}
 
-            async for event in stream_agent(deps, item["input"], []):
+            async for event in stream_agent(auth_agent, deps, item["input"], []):
                 if event["event"] == "tool":
                     tools.append(event["data"])
                 elif event["event"] == "result":
@@ -285,6 +285,45 @@ async def run_dataset_item(item: dict[str, Any]) -> dict[str, Any]:
                 "answer": output,
                 "tools": tools,
                 "usage": usage,
+                "model": settings.litellm_model,
+            }
+        finally:
+            await transaction.rollback()
+
+
+async def run_dataset_item_multiturn(
+    item: dict[str, Any],
+    prior_turns: list[str],
+) -> dict[str, Any]:
+    """Runner multi-tour pour les evals de grounding.
+
+    Exécute les prior_turns pour construire l'historique de conversation,
+    puis run le tour principal (item["input"]) et retourne sa sortie.
+    Utilise agent.run() non-streaming (eval uniquement — pas de streaming SSE).
+    """
+    from app.ai.agent import AgentDeps, agent as auth_agent
+
+    async with AsyncSessionLocal() as db:
+        transaction = await db.begin()
+        try:
+            fixture_user = await create_eval_fixture(db, item)
+            user = await load_eval_user_for_agent(db, fixture_user.id)
+            deps = AgentDeps(db=db, user=user)
+
+            history: list = []
+            for turn_msg in prior_turns:
+                result = await auth_agent.run(turn_msg, message_history=history, deps=deps)
+                history = list(result.all_messages())
+
+            final = await auth_agent.run(item["input"], message_history=history, deps=deps)
+            usage_obj = final.usage()
+            return {
+                "answer": final.output,
+                "tools": [],
+                "usage": {
+                    "input_tokens": usage_obj.input_tokens or 0,
+                    "output_tokens": usage_obj.output_tokens or 0,
+                },
                 "model": settings.litellm_model,
             }
         finally:
